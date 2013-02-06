@@ -2,7 +2,8 @@
 require('./u.js')
 
 var db = require('mongojs').connect(process.env.MONGOHQ_URL || "test")
-var app = require('express').createServer()
+var express = require('express')
+var app = express.createServer()
 
 
 
@@ -13,6 +14,9 @@ var app = require('express').createServer()
 var passport = require('passport')
 var OAuthStrategy = require('passport-oauth').OAuthStrategy;
 
+app.use(express.cookieParser())
+app.use(express.session({ secret : process.env.SESSION_SECRET || "nosecret" }))
+
 passport.use('oDesk', new OAuthStrategy({
     requestTokenURL: 'https://www.odesk.com/api/auth/v1/oauth/token/request',
     accessTokenURL: 'https://www.odesk.com/api/auth/v1/oauth/token/access',
@@ -22,7 +26,12 @@ passport.use('oDesk', new OAuthStrategy({
     callbackURL: 'https://sheltered-hamlet-7258.herokuapp.com/odesk-login-callback'
   },
   function(token, tokenSecret, profile, done) {
-  	done(null, { "name" : "hi" })
+  	done(null, {
+  		token : token,
+  		tokenSecret : tokenSecret,
+  		profile : profile,
+  		name : "hi"
+  	})
     // User.findOrCreate(..., function(err, user) {
     //   done(err, user);
     // });
@@ -34,12 +43,19 @@ app.all('/login',
   passport.authenticate('oDesk', { successRedirect: '/',
                                    failureRedirect: '/login' }));
 
-app.get('/', function(request, response) {
+app.get('/odesk-login-callback', function(req, res) {
 	// db.collection("test").find(function (err, data) {
 	// 	console.log("hi: " + _.json(data))
 	// })
-	console.log("hi?")
-  	response.send('Hello World!')
+	console.log("hi?: " + _.json(req.user))
+  	res.send('Hello World!')
+})
+app.get('/', function(req, res) {
+	// db.collection("test").find(function (err, data) {
+	// 	console.log("hi: " + _.json(data))
+	// })
+	console.log("hi?: " + _.json(req.user))
+  	res.send('Hello World!')
 })
 
 // app.get('/login', function (req, res) {

@@ -2,7 +2,7 @@
 require('./u.js')
 require('./nodeutil.js')
 _.run(function () {
-	
+
 	var db = require('mongojs').connect(process.env.MONGOHQ_URL)
 
 	var express = require('express')
@@ -15,7 +15,14 @@ _.run(function () {
 		    next()
 		})
 	})
-	app.use(express.session({ secret : process.env.SESSION_SECRET }))
+
+	var MongoStore = require('connect-mongo')(express)
+	app.use(express.session({
+		secret : process.env.SESSION_SECRET,
+		store : new MongoStore({
+			db : db.client
+		})
+	}))
 
 	require('./login.js')(db, app, process.env.HOST, process.env.ODESK_API_KEY, process.env.ODESK_API_SECRET)
 

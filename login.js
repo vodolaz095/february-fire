@@ -13,11 +13,6 @@ module.exports = function (db, app, host, odeskApiKey, odeskApiSecret) {
 	    consumerSecret: odeskApiSecret,
 	    callbackURL: host + '/login-callback'
 	}, function(token, tokenSecret, profile, done) {
-
-		// work here
-		console.log("got here 1: " + token)
-		console.log("got here 2: " + tokenSecret)
-
 		var o = new odesk(odeskApiKey, odeskApiSecret)
 		o.OAuth.accessToken = token
 		o.OAuth.accessTokenSecret = tokenSecret

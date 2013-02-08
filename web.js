@@ -3,6 +3,9 @@ require('./u.js')
 require('./nodeutil.js')
 _.run(function () {
 
+	// work here
+	console.log("testing")
+
 	var db = require('mongojs').connect(process.env.MONGOHQ_URL)
 
 	var express = require('express')

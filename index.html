@@ -114,14 +114,16 @@ function goGrabTask(_id) {
             g_output.empty().append(drawTask(task))
         } else {
             setStatus('sorry, that task was taken')
-            showAvailableTasks()
+            goGetAvailableTasks()
         }
     })
 }
 
 function goGetAvailableTasks() {
     rpc('getAvailableTasks', null, function (tasks) {
-        g_output.empty().append(drawGrabbableTasks(tasks))
+        g_output.empty().append(drawGrabbableTasks(tasks)).append($('<button/>').text('more...').click(function () {
+            goGetAvailableTasks()
+        }))
     })
 }
 
@@ -136,13 +138,10 @@ $(function () {
             return
         }
 
-        var buttons = $('<div/>')
-        buttons.append($('<button/>').text('show available tasks').click(goGetAvailableTasks))
-
         g_status = $('<div class="fill"/>')
-        g_output = $('<div class="fill" style="padding-left:10px"/>')
+        g_output = $('<div class="fill"/>')
 
-        $('body').append(_.splitVert(32, null, g_status, _.splitHorz(200, null, $('<div class="fill" style="border-right:1px solid black"/>').append(buttons), g_output)))
+        $('body').append(_.splitVert(32, null, g_status, g_output))
 
         setStatus('welcome ' + user.name)
         if (user.grabbedTask) {

@@ -36,7 +36,10 @@ _.run(function () {
 			grabbedBy : u._id
 		}, {
 			$set : { availableToAnswerAt : 0 },
-			$unset : { grabbedBy : null }
+			$unset : {
+				grabbedBy : null,
+				touchedAt : null
+			}
 		}, p.set)
 		p.get()
 
@@ -47,6 +50,13 @@ _.run(function () {
 	app.all('/rpc', require('./rpc.js')({
 		getUser : function (arg, req, res) {
 			return req.user
+		},
+
+		getFeed : function (arg, req, res) {
+			var p = _.promise()
+			db.collection('records').ensureIndex({ touchedAt : -1 }, { background : true })
+			db.collection('records').find({ touchedAt : { $exists : true }}).sort({ touchedAt : -1 }).limit(10, function (_, data) { p.set(data) })
+			return p.get()
 		},
 
 		getAvailableTasks : function (arg, req, res) {
@@ -76,7 +86,8 @@ _.run(function () {
 			}, {
 				$set : {
 					availableToAnswerAt : _.time() + 1000 * 60 * 60,
-					grabbedBy : u._id
+					grabbedBy : u._id,
+					touchedAt : _.time()
 				}
 			}, p.set)
 			p.get()
@@ -103,9 +114,10 @@ _.run(function () {
 			if (!u) throw "must be logged in"
 
 			if (!arg.task.match(/^.{0,64}$/)) throw "bad input"
-			if (!arg.answer.match(/^.{2,1024}$/)) throw "bad input"
+			if (!arg.answer.match(/^.{150,450}$/)) throw "bad input"
 
 			var p = _.promise()
+			var now = _.time()
 			db.collection('records').update({
 				_id : arg.task,
 				grabbedBy : u._id
@@ -115,16 +127,23 @@ _.run(function () {
 					grabbedBy : null,
 				},
 				$set : {
+					touchedAt : now,
 					answer : arg.answer,
 					answeredBy : u._id,
-					answeredAt : _.time(),
+					answeredAt : now,
 					availableToReviewAt : 0
 				}
 			}, p.set)
 			p.get()
 
 			db.collection('records').findOne({ _id : arg.task, answeredBy : u._id }, function (_, data) { p.set(data) })
-			return !!p.get()
+			if (p.get()) {
+				db.collection('users').update({ _id : u._id }, { $inc : { answerCount : 1 }}, p.set)
+				p.get()
+				return true
+			} else {
+				return false
+			}
 		}
 	}))
 

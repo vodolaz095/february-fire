@@ -6,7 +6,9 @@
     "mongojs": "*",
     "passport": "*",
     "passport-oauth": "*",
-    "node-odesk": "*"
+    "node-odesk": "*",
+    "fibers": "*",
+    "csv": "*"
   },
   "engines": {
     "node": "0.8.x",

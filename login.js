@@ -1,7 +1,6 @@
 
 var passport = require('passport')
 var odesk = require('node-odesk')
-require('./u.js')
 
 module.exports = function (db, app, host, odeskApiKey, odeskApiSecret) {
 	var OAuthStrategy = require('passport-oauth').OAuthStrategy;
@@ -26,8 +25,7 @@ module.exports = function (db, app, host, odeskApiKey, odeskApiSecret) {
 		    	country : data.info.location.country,
 		    	profile : data.info.profile_url
 		    }
-		    db.collection('user').update({ _id : user._id }, user, { upsert : true }, function (err) {
-		    	if (err) return done(error)
+		    db.collection('users').insert(user, function () {
 	    		done(null, user)
 		    })
 		})
@@ -38,8 +36,7 @@ module.exports = function (db, app, host, odeskApiKey, odeskApiSecret) {
 	})
 
 	passport.deserializeUser(function (id, done) {
-		db.collection('user').findOne({ _id : id }, function (err, data) {
-			if (err) return done(err)
+		db.collection('users').findOne({ _id : id }, function (err, data) {
 			done(null, data)
 		})
 	})

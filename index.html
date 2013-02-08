@@ -1,0 +1,158 @@
+<html>
+<head>
+<title>Hello</title>
+<style>
+
+.fill {
+    width: 100%;
+    height: 100%;
+}
+
+table {
+    border-collapse: collapse;
+}
+th, td {
+    padding: 0;
+}
+
+.question {
+}
+
+.category {
+    font-size: small;
+    color: blue;
+}
+
+</style>
+</head>
+<body>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script src="u.js"></script>
+<script>
+
+function rpc(func, arg, cb, eb) {
+    $.ajax({
+        url : '/rpc',
+        data : _.json({ func : func, arg : arg }),
+        success : cb,
+        error : function (o) {
+            if (eb) eb(o)
+            else if (o.statusText) setStatus('error: ' + o.statusText)
+            else setStatus('something bad happened, but I don\'t know what it was, sorry :(')
+        }
+    })
+}
+
+function drawTask(task) {
+    var div = $('<div/>')
+    div.append($('<div class="question"/>').text(task.question).append($('<span style="margin-left:10px" class="category"/>').text(task.category)))
+    var input = $('<textarea style="width:500px;height:300px"/>')
+    div.append(input)
+    div.append($('<br/>'))
+    div.append($('<button/>').text('submit').click(function () {
+        var s = input.val()
+        if (s.length < 2) {
+            alert('answer is not long enough')
+            return
+        }
+        if (s.length > 1024) {
+            alert('answer is too long')
+            return
+        }
+        rpc('submitTask', { 'task' : task._id, 'answer' : s }, function (success) {
+            setStatus(success ? 'successfully submitted task' : 'alas, I failed to submit the task')
+            goGetAvailableTasks()
+        }, function () {
+            setStatus('alas, I failed to submit the task')
+        })
+    }))
+    div.append($('<button/>').text('cancel').click(function () {
+        rpc('ungrabTask', null, function () {
+            goGetAvailableTasks()
+        })
+    }))
+    div.append($('<span style="margin-left:20px"/>').text('grabbed for next '))
+    var timespan = $('<span/>')
+    div.append(timespan)
+    div.append($('<span/>').text(' minutes'))
+    div.append($('<button/>').text('try to grab for more time').click(function () {
+        goGrabTask(task._id)
+    }))
+    function updateTimespan() {
+        timespan.text(Math.round((task.availableToAnswerAt - _.time()) / (1000 * 60)))
+    }
+    updateTimespan()
+    var timespanInterval = setInterval(function () {
+        if (timespan.is(":visible"))
+            updateTimespan()
+        else
+            clearInterval(timespanInterval)
+    }, 1000)
+    return div
+}
+
+function drawGrabbaleTask(task) {
+    var div = $('<div/>')
+    div.append($('<button/>').text('try to grab').click(function () {
+        goGrabTask(task._id)
+    })).append($('<span style="margin-left:10px" class="question"/>').text(task.question)).append($('<span style="margin-left:10px" class="category"/>').text(task.category))
+    return div
+}
+
+function drawGrabbableTasks(tasks) {
+    var div = $('<div/>')
+    _.each(tasks, function (task) {
+        div.append(drawGrabbaleTask(task))
+    })
+    return div
+}
+
+function goGrabTask(_id) {
+    rpc('grabTask', _id, function (task) {
+        if (task) {
+            g_output.empty().append(drawTask(task))
+        } else {
+            setStatus('sorry, that task was taken')
+            showAvailableTasks()
+        }
+    })
+}
+
+function goGetAvailableTasks() {
+    rpc('getAvailableTasks', null, function (tasks) {
+        g_output.empty().append(drawGrabbableTasks(tasks))
+    })
+}
+
+function setStatus(msg) {
+    g_status.empty().append($('<div/>').text(msg))
+}
+
+$(function () {
+    rpc('getUser', null, function (user) {
+        if (!user) {
+            document.location.href = '/login'
+            return
+        }
+
+        var buttons = $('<div/>')
+        buttons.append($('<button/>').text('show available tasks').click(goGetAvailableTasks))
+
+        g_status = $('<div class="fill"/>')
+        g_output = $('<div class="fill" style="padding-left:10px"/>')
+
+        $('body').append(_.splitVert(32, null, g_status, _.splitHorz(200, null, $('<div class="fill" style="border-right:1px solid black"/>').append(buttons), g_output)))
+
+        setStatus('welcome ' + user.name)
+        if (user.grabbedTask) {
+            goGrabTask(user.grabbedTask)
+        } else {
+            goGetAvailableTasks()
+        }
+    })
+})
+
+</script>
+
+</body>
+</html>

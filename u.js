@@ -2,31 +2,144 @@
 // dependencies: jQuery
 // license : public domain
 
-_ = {}
+// note to self: new fancy native array methods:
+// forEach
+// map
+// filter
+// reduce
+// every
+// some
+
+_ = (function () {
+var _ = {}
 
 _.has = function (o, k) {
-	return o.hasOwnProperty(k)
+    return o.hasOwnProperty(k)
 }
 
 _.each = function (o, func) {
-	if (o instanceof Array) {
-		for (var i = 0; i < o.length; i++) {
-			func(o[i], i)
-		}
-	} else {
-		for (var k in o) {
-			if (_.has(o, k)) {
-				func(o[k], k)
-			}
-		}
-	}
+    if (o instanceof Array)
+        return o.forEach(func)
+    for (var k in o)
+        if (o.hasOwnProperty(k))
+            func(o[k], k)
+}
+
+_.map = function (o, func) {
+    if (o instanceof Array)
+        return o.map(func)
+    var accum = {}
+    for (var k in o)
+        if (o.hasOwnProperty(k))
+            accum[k] = func(o[k], k)
+    return accum
+}
+
+_.filter = function (o, func) {
+    if (o instanceof Array)
+        return o.filter(func)
+    var accum = {}
+    for (var k in o)
+        if (o.hasOwnProperty(k))
+            if (func(o[k], k))
+                accum[k] = o[k]
+    return accum
+}
+
+_.reduce = _.fold = function (o, func, init) {
+    if (o instanceof Array)
+        return o.reduce(func, init)
+    var accum = init
+    for (var k in o)
+        if (o.hasOwnProperty(k))
+            accum = func(accum, o[k])
+    return accum
+}
+
+_.some = _.any = function (o, func) {
+    if (o instanceof Array)
+        return o.some(func)
+    for (var k in o)
+        if (o.hasOwnProperty(k))
+            if (func(o[k], k)) return true
+    return false
+}
+
+_.every = _.all = function (o, func) {
+    if (o instanceof Array)
+        return o.every(func)
+    for (var k in o)
+        if (o.hasOwnProperty(k))
+            if (!func(o[k], k)) return false
+    return true
+}
+
+_.size = function (o, func) {
+    if (o instanceof Array)
+        return o.length
+    return _.keys(o).length
+}
+
+_.deepEquals = function (a, b) {
+    if (typeof(a) != typeof(b)) return false
+    if (typeof(a) == 'object') {
+        return _.size(a) == _.size(b) && _.all(a, function (v, k) {
+            return _.has(b, k) && _.deepEquals(b[k], v)
+        })
+    } else {
+        return a == b
+    }
+}
+
+_.keys = function (o) {
+    return Object.keys(o)
+}
+
+_.values = function (o) {
+    var accum = []
+    _.each(o, function (e) {
+        accum.push(e)
+    })
+    return accum
+}
+
+_.pairs = function (o) {
+    var accum = []
+    _.each(o, function (v, k) {
+        accum.push([k, v])
+    })
+    return accum
+}
+
+_.unPairs = function (a) {
+    var accum = {}
+    _.each(a, function (e) {
+        accum[e[0]] = e[1]
+    })
+    return accum
+}
+
+_.min = function (o, func) {
+    var accum = null
+    _.each(o, function (v) {
+        if (accum === null || v < accum)
+            accum = v
+    })
+    return accum
+}
+
+_.max = function (o, func) {
+    var accum = null
+    _.each(o, function (v) {
+        if (accum === null || v > accum)
+            accum = v
+    })
+    return accum
 }
 
 _.setAdd = function (s, key) {
-    if (!_.has(s, key) || !s[key]) {
-        s[key] = true
-        return true
-    }
+    if (!_.has(s, key) || !s[key])
+        return s[key] = true
     return false
 }
 
@@ -41,8 +154,7 @@ _.makeSet = function (a) {
 _.bagAdd = function (bag, key) {
     if (!_.has(bag, key))
         bag[key] = 0
-    bag[key]++
-    return bag[key]
+    return ++bag[key]
 }
 
 _.lerp = function (t0, v0, t1, v1, t) {
@@ -62,43 +174,21 @@ _.lines = function (s) {
 }
 
 _.sum = function (a) {
-    return _.reduce(a, function (a, b) { return a + b }, 0)
+    return _.fold(a, function (a, b) { return a + b }, 0)
 }
 
-_.choose = function (a) {
-    if (a instanceof Array)
-        return a[Math.floor(a.length * Math.random())]
+_.sample = function (o) {
+    if (o instanceof Array)
+        return o[Math.floor(o.length * Math.random())]
     else
-        return a[pick(_.keys(a))]
-}
-_.sample = _.choose
-
-_.unPairs = _.object
-
-if (!_.oldMap) _.oldMap = _.map
-
-_.map = function (o, iterator, context) {
-    var r = _.isArray(o) ? [] : {}
-    _.each(o, function (v, k, list) {
-        r[k] = iterator.call(context, v, k, list)
-    })
-    return r
+        return _.sample(_.values(o))
 }
 
-if (!_.oldFilter) _.oldFilter = _.filter
-
-_.filter = _.select = function (o, iterator, context) {
-    if (_.isArray(o)) {
-        return _.oldFilter(o, iterator, context)
-    } else {
-        var r = {}
-        _.each(o, function (v, k, list) {
-            if (iterator.call(context, v, k, list)) {
-                r[k] = v
-            }
-        })
-        return r
-    }
+_.toArray = function (a) {
+    var accum = []
+    for (var i = 0; i < a.length; i++)
+        accum[i] = a[i]
+    return accum
 }
 
 _.ensure = function () {
@@ -122,7 +212,6 @@ _.escapeUnicodeChar = function (c) {
     return '\\u' + hex
 }
 
-// depends on _.escapeUnicodeChar
 _.escapeString = function (s) {
     return s.
         replace(/\\/g, '\\\\').
@@ -134,7 +223,6 @@ _.escapeString = function (s) {
         replace(/[\u0000-\u001F]|[\u0080-\uFFFF]/g, _.escapeUnicodeChar)
 }
 
-// depends on _.escapeString
 _.escapeRegExp = function (s) {
     return _.escapeString(s).replace(/([\{\}\(\)\|\[\]\^\$\.\*\+\?])/g, "\\$1")
 }
@@ -186,8 +274,19 @@ _.unescapeXml = function (s) {
     })
 }
 
-_.splitHorz = function (percent, a, b) {
-    var t = $('<table class="fill"><tr><td class="a" width="' + percent + '%"></td><td class="b" width="' + (100 - percent) + '%"></td></tr></table>')
+function splitSizeHelper(prefix, size) {
+    if (size == null) return ""
+    if (size <= 1) return prefix + '="' + Math.round(size) + '%"'
+    return prefix + '="' + size + 'px"'
+}
+
+_.splitHorz = function (aSize, bSize, a, b) {
+    aSize = splitSizeHelper('width', aSize)
+    bSize = splitSizeHelper('width', bSize)
+    var t = $('<table style="width:100%;height:100%"><tr valign="top"><td class="a" ' + aSize + '></td><td class="b" ' + bSize + '></td></tr></table>')
+    // don't do this:
+    // t.find('.a').append(a)
+    // t.find('.b').append(b)
     var _a = t.find('.a')
     var _b = t.find('.b')
     _a.append(a)
@@ -195,8 +294,13 @@ _.splitHorz = function (percent, a, b) {
     return t
 }
 
-_.splitVert = function (percent, a, b) {
-    var t = $('<table class="fill"><tr><td class="a" height="' + percent + '%"></td></tr><tr><td class="b" height="' + (100 - percent) + '%"></td></tr></table>')
+_.splitVert = function (aSize, bSize, a, b) {
+    aSize = splitSizeHelper('height', aSize)
+    bSize = splitSizeHelper('height', bSize)
+    var t = $('<table style="width:100%;height:100%"><tr valign="top"><td class="a" ' + aSize + '></td></tr><tr valign="top"><td class="b" ' + bSize + '></td></tr></table>')
+    // don't do this:
+    // t.find('.a').append(a)
+    // t.find('.b').append(b)
     var _a = t.find('.a')
     var _b = t.find('.b')
     _a.append(a)
@@ -215,9 +319,11 @@ _.dialog = function (content) {
     var d = $('<div style="position:fixed;z-index:20000;background:white"/>').append(content)
     $('body').append(d)
     setTimeout(function () {
+        var w = window.innerWidth
+        var h = window.innerHeight
         d.css({
-            left : (w / 2 - d.width() / 2) + "px",
-            top : (h / 2 - d.height() / 2) + "px"
+            left : Math.round(w / 2 - d.width() / 2) + "px",
+            top : Math.round(h / 2 - d.height() / 2) + "px"
         })
     }, 0)
     
@@ -341,3 +447,6 @@ _.unJson = function (s) {
         return o
     }
 }
+
+return _
+})();

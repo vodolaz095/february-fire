@@ -20,7 +20,7 @@ _.run(function () {
 	app.use(express.session({
 		secret : process.env.SESSION_SECRET,
 		store : new MongoStore({
-			db : db.client
+			url : process.env.MONGOHQ_URL
 		})
 	}))
 

@@ -23,10 +23,6 @@ _.run(function () {
 		res.sendfile('./index.html')
 	})
 
-	app.get('/u.js', function(req, res) {
-		res.sendfile('./u.js')
-	})
-
 	function ungrabTask(u) {
 		var p = _.promise()
 		db.collection('records').update({
@@ -113,6 +109,7 @@ _.run(function () {
 				$set : {
 					answer : arg.answer,
 					answeredBy : u._id,
+					answeredAt : _.time(),
 					availableToReviewAt : 0
 				}
 			}, p.set)
@@ -120,34 +117,6 @@ _.run(function () {
 
 			db.collection('records').findOne({ _id : arg.task, answeredBy : u._id }, function (_, data) { p.set(data) })
 			return !!p.get()
-		},
-
-		addRecord : function (arg) {
-			if (arg.token != process.env.MY_API_TOKEN) throw "access denied"
-			var record = arg.record
-
-			record._id = _.md5(record.question + "," + record.segment + "," + record.category)
-			record.availableToAnswerAt = 0
-
-			var p = _.promise()
-		    db.collection('records').insert(record, function () { p.set() })
-		    p.get()
-		    return true
-		},
-
-		processRecords : function (arg) {
-			if (arg.token != process.env.MY_API_TOKEN) throw "access denied"
-
-			var startTime = _.time()
-			var p = _.promise()
-			db.collection('records').update({}, { $set : {
-				availableToAnswerAt : 0
-			}}, { multi : true}, function () { p.set() })
-			p.get()
-			var endTime = _.time()
-			console.log("time = " + (endTime - startTime))
-
-			return true
 		}
 	}))
 

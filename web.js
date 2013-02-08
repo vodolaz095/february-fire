@@ -51,7 +51,11 @@ _.run(function () {
 
 		getAvailableTasks : function (arg, req, res) {
 			var p = _.promise()
-			db.collection('records').find({ availableToAnswerAt : { $lt : _.time() }}).limit(10, function (err, data) { p.set(data) })
+			var rand = _.md5('' + Math.random())
+			db.collection('records').find({ _id : { $gte : rand }, availableToAnswerAt : { $lt : _.time() }}).limit(10, function (err, data) { p.set(data) })
+			var data = p.get()
+			if (data.length > 0) return data
+			db.collection('records').find({ _id : { $lte : rand }, availableToAnswerAt : { $lt : _.time() }}).limit(10, function (err, data) { p.set(data) })
 			var data = p.get()
 			return data
 		},

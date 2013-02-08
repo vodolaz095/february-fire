@@ -33,6 +33,7 @@ th, td {
 function rpc(func, arg, cb, eb) {
     $.ajax({
         url : '/rpc',
+        type : 'post',
         data : _.json({ func : func, arg : arg }),
         success : cb,
         error : function (o) {

@@ -39,19 +39,8 @@ _.run(function () {
 			$unset : { grabbedBy : null }
 		}, p.set)
 		p.get()
-	}
 
-	function tryToGrabTask(u, task) {
-		var p = _.promise()
-		db.collection('records').update({
-			_id : task,
-			availableToAnswerAt : { $lt : _.time() }
-		}, {
-			$set : {
-				availableToAnswerAt : _.time() + 1000 * 60 * 60,
-				grabbedBy : u._id
-			}
-		}, p.set)
+		db.collection('users').update({ _id : u._id }, { $unset : { grabbedTask : null }}, p.set)
 		p.get()
 	}
 
@@ -74,9 +63,19 @@ _.run(function () {
 			if (!arg.match(/^.{0,64}$/)) throw "bad input"
 
 			ungrabTask(u)
-			tryToGrabTask(u, arg)
 
 			var p = _.promise()
+			db.collection('records').update({
+				_id : arg,
+				availableToAnswerAt : { $lt : _.time() }
+			}, {
+				$set : {
+					availableToAnswerAt : _.time() + 1000 * 60 * 60,
+					grabbedBy : u._id
+				}
+			}, p.set)
+			p.get()
+
 			db.collection('records').findOne({ _id : arg }, function (_, data) { p.set(data) })
 			var rec = p.get()
 
@@ -84,9 +83,6 @@ _.run(function () {
 				db.collection('users').update({ _id : u._id }, { $set : { grabbedTask : rec._id }}, p.set)
 				p.get()
 				return rec
-			} else {
-				db.collection('users').update({ _id : u._id }, { $unset : { grabbedTask : null }}, p.set)
-				p.get()
 			}
 		},
 

@@ -30,6 +30,20 @@ th, td {
 <script src="https://raw.github.com/dglittle/myutil/master/u.js"></script>
 <script>
 
+function onError() {
+    var div = $('<div style="padding:20px;width:300px;height:200px"/>')
+    div.append($('<span/>').text("Oops. Not sure what happened. I recommend refreshing the page."))
+    div.append($('<br/>'))
+    div.append($('<br/>'))
+    div.append($('<span/>').text("If you were typing something, and you want to save your work, click "))
+    div.append($('<a href="#"/>').text("here").click(function (e) {
+        e.preventDefault()
+        _.closeDialog()
+    }))
+    div.append($('<span/>').text(" and copy-paste your work somewhere else, and then refresh the page."))
+    _.dialog(div)
+}
+
 function rpc(func, arg, cb, eb) {
     $.ajax({
         url : '/rpc',
@@ -37,9 +51,8 @@ function rpc(func, arg, cb, eb) {
         data : _.json({ func : func, arg : arg }),
         success : cb,
         error : function (o) {
-            if (eb) eb(o)
-            else if (o.statusText) setStatus('error: ' + o.statusText)
-            else setStatus('something bad happened, but I don\'t know what it was, sorry :(')
+            if (eb) return eb(o)
+            onError()
         }
     })
 }

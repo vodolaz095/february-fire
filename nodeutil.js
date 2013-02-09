@@ -5,24 +5,20 @@ _.md5 = function (s) {
     return require('crypto').createHash('md5').update(s).digest("hex")    
 }
 
-_.tryRun = function (f) {
-    if (Fiber.current !== f) {
-        try {
-            f.run()
-        } catch (e) {
-            if (e instanceof Error) {
-                if ("" + e == "Error: This Fiber is already running") {
-                    // that's fine.. we really need to be able to check for "yielding"
-                    return
-                }
-            }
-            throw e
-        }
-    }
+_.run = function (f) {
+    var c = Fiber.current
+    if (c) c.yielding = true
+    if (typeof(f) == 'function')
+        var ret = Fiber(f).run()
+    else
+        if (f != c && f.started && !f.yielding)
+            var ret = f.run()
+    if (c) c.yielding = false
+    return ret
 }
 
-_.run = function (func) {
-    Fiber(func).run()
+_.yield = function () {
+    return Fiber.yield()
 }
 
 _.promise = function () {
@@ -33,51 +29,14 @@ _.promise = function () {
         set : function (v) {
             done = true
             val = v
-            _.tryRun(f)
+            _.run(f)
         },
         get : function () {
-            while (!done) {
-                Fiber.yield()
-            }
+            while (!done) _.yield()
             done = false
             return val
         }
     }
-}
-
-_.wait = function (funcs) {
-    var c = Fiber.current
-    var waitingCount = 0
-    _.each(funcs, function (f) {
-        waitingCount++
-        _.run(function () {
-            f()
-            waitingCount--
-            _.tryRun(c)
-        })
-    })
-    while (waitingCount > 0) Fiber.yield()
-}
-
-// adapted from https://github.com/lm1/node-fiberize/blob/master/fiberize.js
-_.fiberize = function () {
-    var p = _.promise()
-
-    var args = _.toArray(arguments)
-    args.push(function () {
-        p.set(_.toArray(arguments))
-    })
-    var result = args[0].apply(null, args.slice(1))
-    
-    var cb_args = p.get()
-        
-    var err = cb_args[0]
-    if (err instanceof Error) throw err
-    if (err == null) cb_args.shift()
-    if (result !== undefined) result = [result].concat(cb_args)
-    else result = cb_args
-    if (result.length <= 1) result = result[0]
-    return result
 }
 
 _.consume = function (input, encoding) {

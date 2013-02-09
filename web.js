@@ -1,4 +1,8 @@
 
+process.on('uncaughtException', function (err) {
+    console.log('uncaught exception: ' + (err.stack || err))
+})
+
 require('./u.js')
 require('./nodeutil.js')
 _.run(function () {
@@ -26,7 +30,7 @@ _.run(function () {
 
 	require('./login.js')(db, app, process.env.HOST, process.env.ODESK_API_KEY, process.env.ODESK_API_SECRET)
 
-	app.get('/', function(req, res) {
+	app.get('/', function (req, res) {
 		res.sendfile('./index.html')
 	})
 

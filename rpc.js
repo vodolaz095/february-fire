@@ -2,7 +2,7 @@
 // example request: [{func : "add", args : [1, 2]}, {func : "sub", args : [2, 1]}]
 
 module.exports = function (funcs) {
-    return function (req, res, next) {
+    return function (req, res) {
         _.run(function () {
             var input = _.unJson(req.method.match(/post/i) ? req.body : _.unescapeUrl(req.url.match(/\?(.*)/)[1]))
             if (input instanceof Array) {

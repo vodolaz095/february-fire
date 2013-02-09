@@ -30,9 +30,16 @@ th, td {
 <script src="https://raw.github.com/dglittle/myutil/master/u.js"></script>
 <script>
 
-function onError() {
+g_version = 1
+
+function onError(msg) {
     var div = $('<div style="padding:20px;width:300px;height:200px"/>')
-    div.append($('<span/>').text("Oops. Not sure what happened. I recommend refreshing the page."))
+    div.append($('<span/>').text(msg || "Oops. Not sure what happened."))
+    div.append($('<br/>'))
+    div.append($('<a href="#"/>').text("Please refresh the page.").click(function (e) {
+        e.preventDefault()
+        location.reload()
+    }))
     div.append($('<br/>'))
     div.append($('<br/>'))
     div.append($('<span/>').text("If you were typing something, and you want to save your work, click "))
@@ -40,18 +47,23 @@ function onError() {
         e.preventDefault()
         _.closeDialog()
     }))
-    div.append($('<span/>').text(" and copy-paste your work somewhere else, and then refresh the page."))
+    div.append($('<span/>').text(" to remove this dialog so you can copy-paste your work somewhere else, and then refresh the page."))
     _.dialog(div)
 }
 
-function rpc(func, arg, cb, eb) {
+function rpc(func, arg, cb) {
     $.ajax({
         url : '/rpc',
         type : 'post',
-        data : _.json({ func : func, arg : arg }),
-        success : cb,
-        error : function (o) {
-            if (eb) return eb(o)
+        data : _.json([
+            { func : 'getVersion' },
+            { func : func, arg : arg }
+        ]),
+        success : function (r) {
+            if (r[0] != g_version) return onError('This interface has been updated.')
+            cb(r[1])
+        },
+        error : function () {
             onError()
         }
     })

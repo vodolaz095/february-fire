@@ -80,21 +80,25 @@ function drawTask(task) {
             alert('answer is too long: cannot be more than 450 characters')
             return
         }
-        if (url.length < 2 && s.match(/http/)) {
-            alert('please move url to the "see url:" box')
-            return
-        }
-        if (url.length < 2) {
-            alert('must input a reference url')
-            return
-        }
-        if (!url.match(/^https?:\/\//)) {
-            alert('url must begin with http:// or https://')
-            return
-        }
-        if (!url.match(/^https?:\/\/.{2,1024}$/)) {
-            alert('url is either too short or too long')
-            return
+        if (url.length > 0) {
+            // if (url.length < 2 && s.match(/http/)) {
+            //     alert('please move url to the "see url:" box')
+            //     return
+            // }
+            // if (url.length < 2) {
+            //     alert('must input a reference url')
+            //     return
+            // }
+            if (!url.match(/^https?:\/\//)) {
+                alert('url must begin with http:// or https://')
+                return
+            }
+            if (!url.match(/^https?:\/\/.{2,1024}$/)) {
+                alert('url is either too short or too long')
+                return
+            }
+        } else {
+            url = null
         }
         rpc('submitTask', { 'task' : task._id, 'answer' : s, 'url' : url }, function (success) {
             setStatus(success ? 'successfully submitted task' : 'alas, I failed to submit the task')

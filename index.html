@@ -58,10 +58,20 @@ function drawTask(task) {
     }
     updateCharacters()
     input.keydown(updateCharacters).keyup(updateCharacters).change(updateCharacters)
+
     div.append($('<br/>'))
     div.append($('<br/>'))
+
+    var urlBox = $('<input type="text" style="width:100%"/>')
+    div.append(_.splitHorz(0.01, null,
+        $('<div/>').html('see&nbsp;url:&nbsp;'),
+        urlBox).css('width', '500px').css('height', '1em'))
+
+    div.append($('<br/>'))
+
     div.append($('<button/>').text('submit').click(function () {
         var s = input.val()
+        var url = urlBox.val()
         if (s.length < 150) {
             alert('answer is not long enough: must be at least 150 characters')
             return
@@ -70,7 +80,23 @@ function drawTask(task) {
             alert('answer is too long: cannot be more than 450 characters')
             return
         }
-        rpc('submitTask', { 'task' : task._id, 'answer' : s }, function (success) {
+        if (url.length < 2 && s.match(/http/)) {
+            alert('please move url to the "see url:" box')
+            return
+        }
+        if (url.length < 2) {
+            alert('must input a reference url')
+            return
+        }
+        if (!url.match(/^https?:\/\//)) {
+            alert('url must begin with http:// or https://')
+            return
+        }
+        if (!url.match(/^https?:\/\/.{2,1024}$/)) {
+            alert('url is either too short or too long')
+            return
+        }
+        rpc('submitTask', { 'task' : task._id, 'answer' : s, 'url' : url }, function (success) {
             setStatus(success ? 'successfully submitted task' : 'alas, I failed to submit the task')
             updateUser()
             goGetAvailableTasks()
@@ -147,6 +173,8 @@ function drawFeedTask(task) {
         div.append($('<span style="color:green"/>').text('grabbed by ' + task.grabbedBy))
     if (task.answer)
         div.append($('<div/>').append($('<span style="font-weight:bold;font-size:small"/>').text('answer: ')).append($('<span style="color:grey"/>').text(task.answer)))
+    if (task.url)
+        div.append($('<div/>').append($('<span style="font-weight:bold;font-size:small"/>').text('see url: ')).append($('<span style="color:grey"/>').text(task.url)))
     if (task.answeredBy)
         div.append($('<span style="color:green"/>').text('answered by ' + task.answeredBy))
     return div

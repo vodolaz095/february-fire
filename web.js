@@ -115,6 +115,10 @@ _.run(function () {
 
 			if (!arg.task.match(/^.{0,64}$/)) throw "bad input"
 			if (!arg.answer.match(/^.{150,450}$/)) throw "bad input"
+			// work here
+			if (arg.url) {
+				if (!arg.url.match(/^https?:\/\/.{2,1024}$/)) throw "bad input"
+			}
 
 			var p = _.promise()
 			var now = _.time()
@@ -129,6 +133,7 @@ _.run(function () {
 				$set : {
 					touchedAt : now,
 					answer : arg.answer,
+					url : arg.url,
 					answeredBy : u._id,
 					answeredAt : now,
 					availableToReviewAt : 0

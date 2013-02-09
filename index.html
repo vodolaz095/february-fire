@@ -28,6 +28,7 @@ th, td {
 <body>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
 <script src="https://raw.github.com/dglittle/myutil/master/u.js"></script>
+<script src="https://raw.github.com/dglittle/myutil/master/jquery.timeago.js"></script>
 <script>
 
 g_version = 1
@@ -194,7 +195,7 @@ function goGetAvailableTasks() {
 
 function drawFeedTask(task) {
     var div = $('<div style="width:700px"/>')
-    div.append($('<div style="font-size:small;color:lightgrey"/>').text('' + new Date(task.touchedAt)))
+    div.append($('<div style="font-size:small;color:lightgrey"/>').text($.timeago(task.touchedAt)))
     div.append($('<span class="question"/>').text(task.question))
     div.append($('<span style="margin-left:10px" class="category"/>').text(task.category))
     div.append($('<br/>'))

@@ -168,7 +168,7 @@ function goGetAvailableTasks() {
 }
 
 function drawFeedTask(task) {
-    var div = $('<div/>')
+    var div = $('<div style="width:700px"/>')
     div.append($('<div style="font-size:small;color:lightgrey"/>').text('' + new Date(task.touchedAt)))
     div.append($('<span class="question"/>').text(task.question))
     div.append($('<span style="margin-left:10px" class="category"/>').text(task.category))

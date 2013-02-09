@@ -30,8 +30,22 @@ _.run(function () {
 		res.sendfile('./index.html')
 	})
 
-	function ungrabTask(u) {
+	function dbPromise() {
 		var p = _.promise()
+		return {
+			set : function (err, data) {
+				p.set([err, data])
+			},
+			get : function () {
+				var x = p.get()
+				if (x[0]) throw x[0]
+				return x[1]
+			}
+		}
+	}
+
+	function ungrabTask(u) {
+		var p = dbPromise()
 		db.collection('records').update({
 			grabbedBy : u._id
 		}, {
@@ -48,27 +62,30 @@ _.run(function () {
 	}
 
 	app.all('/rpc', require('./rpc.js')({
+		getVersion : function () {
+			return 1
+		},
+
 		getUser : function (arg, req, res) {
 			return req.user
 		},
 
 		getFeed : function (arg, req, res) {
-			var p = _.promise()
+			var p = dbPromise()
 			db.collection('records').ensureIndex({ touchedAt : -1 }, { background : true })
-			db.collection('records').find({ touchedAt : { $exists : true }}).sort({ touchedAt : -1 }).limit(10, function (_, data) { p.set(data) })
+			db.collection('records').find({ touchedAt : { $exists : true }}).sort({ touchedAt : -1 }).limit(10, p.set)
 			return p.get()
 		},
 
 		getAvailableTasks : function (arg, req, res) {
-			var p = _.promise()
+			var p = dbPromise()
 			var rand = _.md5('' + Math.random())
 			var rands = _.shuffle([[{ $gte : rand }, { _id : 1 }], [{ $lte : rand }, { _id : -1 }]])
-			db.collection('records').find({ _id : rands[0][0], availableToAnswerAt : { $lt : _.time() }}).sort(rands[0][1]).limit(10, function (err, data) { p.set(data) })
+			db.collection('records').find({ _id : rands[0][0], availableToAnswerAt : { $lt : _.time() }}).sort(rands[0][1]).limit(10, p.set)
 			var data = p.get()
 			if (data.length > 0) return data
-			db.collection('records').find({ _id : rands[1][0], availableToAnswerAt : { $lt : _.time() }}).sort(rands[1][1]).limit(10, function (err, data) { p.set(data) })
-			var data = p.get()
-			return data
+			db.collection('records').find({ _id : rands[1][0], availableToAnswerAt : { $lt : _.time() }}).sort(rands[1][1]).limit(10, p.set)
+			return p.get()
 		},
 
 		grabTask : function (arg, req, res) {
@@ -79,7 +96,7 @@ _.run(function () {
 
 			ungrabTask(u)
 
-			var p = _.promise()
+			var p = dbPromise()
 			db.collection('records').update({
 				_id : arg,
 				availableToAnswerAt : { $lt : _.time() }
@@ -92,7 +109,7 @@ _.run(function () {
 			}, p.set)
 			p.get()
 
-			db.collection('records').findOne({ _id : arg }, function (_, data) { p.set(data) })
+			db.collection('records').findOne({ _id : arg }, p.set)
 			var rec = p.get()
 
 			if (rec.grabbedBy == u._id) {
@@ -120,7 +137,7 @@ _.run(function () {
 				if (!arg.url.match(/^https?:\/\/.{2,1024}$/)) throw "bad input"
 			}
 
-			var p = _.promise()
+			var p = dbPromise()
 			var now = _.time()
 			db.collection('records').update({
 				_id : arg.task,
@@ -141,7 +158,7 @@ _.run(function () {
 			}, p.set)
 			p.get()
 
-			db.collection('records').findOne({ _id : arg.task, answeredBy : u._id }, function (_, data) { p.set(data) })
+			db.collection('records').findOne({ _id : arg.task, answeredBy : u._id }, p.set)
 			if (p.get()) {
 				db.collection('users').update({ _id : u._id }, { $inc : { answerCount : 1 }}, p.set)
 				p.get()

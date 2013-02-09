@@ -25,7 +25,8 @@ module.exports = function (db, app, host, odeskApiKey, odeskApiSecret) {
 		    	country : data.info.location.country,
 		    	profile : data.info.profile_url
 		    }
-		    db.collection('users').insert(user, function () {
+		    db.collection('users').insert(user, function (err) {
+		    	if (err) return done(err)
 	    		done(null, user)
 		    })
 		})
@@ -37,6 +38,7 @@ module.exports = function (db, app, host, odeskApiKey, odeskApiSecret) {
 
 	passport.deserializeUser(function (id, done) {
 		db.collection('users').findOne({ _id : id }, function (err, data) {
+	    	if (err) return done(err)
 			done(null, data)
 		})
 	})

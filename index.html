@@ -53,16 +53,19 @@ function onError(msg) {
 }
 
 function rpc(func, arg, cb) {
+    var calls = []
+    calls.push({ func : 'getVersion' })
+    for (var i = 0; i + 1 < arguments.length; i += 2)
+        calls.push({ func : arguments[i], arg : arguments[i + 1] })
+    cb = arguments[arguments.length - 1]
+
     $.ajax({
         url : '/rpc',
         type : 'post',
-        data : _.json([
-            { func : 'getVersion' },
-            { func : func, arg : arg }
-        ]),
+        data : _.json(calls),
         success : function (r) {
             if (r[0] != g_version) return onError('This interface has been updated.')
-            cb(r[1])
+            cb.apply(null, r.slice(1))
         },
         error : function () {
             onError()
@@ -70,11 +73,22 @@ function rpc(func, arg, cb) {
     })
 }
 
-function drawTask(task) {
+g_saveAnswer = null
+g_saveUrl = null
+
+function drawTask(task, review) {
     var div = $('<div/>')
     div.append($('<div class="question"/>').text(task.question).append($('<span style="margin-left:10px" class="category"/>').text(task.category)))
+
     var input = $('<textarea style="width:500px;height:150px"/>')
     div.append(input)
+    if (review)
+        input.val(task.answer)
+    if (g_saveAnswer) {
+        input.val(g_saveAnswer)
+        g_saveAnswer = null
+    }
+
     div.append($('<br/>'))
     var characters = $('<span/>')
     div.append(characters)
@@ -92,10 +106,16 @@ function drawTask(task) {
     div.append(_.splitHorz(0.01, null,
         $('<div/>').html('see&nbsp;url:&nbsp;'),
         urlBox).css('width', '500px').css('height', '1em'))
+    if (review)
+        urlBox.val(task.url)
+    if (g_saveUrl) {
+        urlBox.val(g_saveUrl)
+        g_saveUrl = null
+    }
 
     div.append($('<br/>'))
 
-    div.append($('<button/>').text('submit').click(function () {
+    div.append($('<button/>').text(review ? 'accept' : 'submit').click(function () {
         var s = input.val()
         var url = urlBox.val()
         if (s.length < 150) {
@@ -126,16 +146,29 @@ function drawTask(task) {
         } else {
             url = null
         }
-        rpc('submitTask', { 'task' : task._id, 'answer' : s, 'url' : url }, function (success) {
+        var func = 'submitTask'
+        var arg = { task : task._id, answer : s, url : url }
+        if (review) {
+            func = 'submitReviewTask'
+            arg.accept = true
+        }
+        rpc(func, arg, function (success) {
             setStatus(success ? 'successfully submitted task' : 'alas, I failed to submit the task')
             updateUser()
             goGetAvailableTasks()
-        }, function () {
-            setStatus('alas, I failed to submit the task')
         })
     }))
+    if (review) {
+        div.append($('<button style="margin-left:10px"/>').text('reject').click(function () {
+            rpc('submitReviewTask', { task : task._id, accept : false }, function (success) {
+                setStatus(success ? 'successfully submitted task' : 'alas, I failed to submit the task')
+                updateUser()
+                goGetAvailableTasks()
+            })
+        }))
+    }
     div.append($('<button style="margin-left:10px"/>').text('cancel').click(function () {
-        rpc('ungrabTask', null, function () {
+        rpc(review ? 'ungrabReviewTask' : 'ungrabTask', null, function () {
             goGetAvailableTasks()
         })
     }))
@@ -144,10 +177,15 @@ function drawTask(task) {
     div.append(timespan)
     div.append($('<span/>').text(' minutes'))
     div.append($('<button style="margin-left:10px"/>').text('try to grab for more time').click(function () {
-        goGrabTask(task._id)
+        g_saveAnswer = input.val()
+        g_saveUrl = urlBox.val()
+        if (review)
+            goGrabReviewTask(task._id)
+        else
+            goGrabTask(task._id)
     }))
     function updateTimespan() {
-        timespan.text(Math.round((task.availableToAnswerAt - _.time()) / (1000 * 60)))
+        timespan.text(Math.round(((review ? task.availableToReviewAt : task.availableToAnswerAt) - _.time()) / (1000 * 60)))
     }
     updateTimespan()
     var timespanInterval = setInterval(function () {
@@ -170,16 +208,42 @@ function goGrabTask(_id) {
     })
 }
 
+function goGrabReviewTask(_id) {
+    rpc('grabReviewTask', _id, function (task) {
+        if (task) {
+            g_output.empty().append(drawTask(task, true))
+        } else {
+            setStatus('sorry, that task was taken')
+            goGetAvailableTasks()
+        }
+    })
+}
+
 function drawGrabbaleTask(task) {
-    var div = $('<div/>')
+    var div = $('<div style="width:700px"/>')
     div.append($('<button/>').text('try to grab').click(function () {
         goGrabTask(task._id)
     })).append($('<span style="margin-left:10px" class="question"/>').text(task.question)).append($('<span style="margin-left:10px" class="category"/>').text(task.category))
     return div
 }
 
+function drawGrabbaleReviewTask(task) {
+    var div = $('<div style="width:700px;margin-top:10px"/>')
+    div.append($('<button style="float:left"/>').text('try to grab').click(function () {
+        goGrabReviewTask(task._id)
+    }))
+    var right = $('<div style="float:left"/>')
+    right.append($('<span style="margin-left:10px" class="question"/>').text(task.question))
+    right.append($('<span style="margin-left:10px" class="category"/>').text(task.category))
+    right.append($('<br/>'))
+    right.append($('<span style="margin-left:10px;color:grey"/>').text(task.answer.slice(0, 100) + '...'))
+    div.append(right)
+    div.append($('<div style="clear:both"/>'))
+    return div
+}
+
 function goGetAvailableTasks() {
-    rpc('getAvailableTasks', null, function (tasks) {
+    function helper(tasks, reviewTasks) {
         g_output.empty()
         g_output.append($('<div style="font-weight:bold;margin-bottom:10px"/>').text('answer writing tasks, $0.28 each'))
         var div = $('<div/>')
@@ -190,7 +254,23 @@ function goGetAvailableTasks() {
         g_output.append($('<button/>').text('more...').click(function () {
             goGetAvailableTasks()
         }))
-    })
+
+        if (!reviewTasks) return
+
+        g_output.append($('<div style="font-weight:bold;margin-bottom:10px;margin-top:20px"/>').text('review tasks, $0.04 each'))
+        var div = $('<div/>')
+        _.each(reviewTasks, function (task) {
+            div.append(drawGrabbaleReviewTask(task))
+        })
+        g_output.append(div)
+        g_output.append($('<button/>').text('more...').click(function () {
+            goGetAvailableTasks()
+        }))
+    }
+    if (g_user.editor)
+        rpc('getAvailableTasks', null, 'getAvailableReviewTasks', null, helper)
+    else
+        rpc('getAvailableTasks', null, helper)
 }
 
 function drawFeedTask(task) {
@@ -199,14 +279,18 @@ function drawFeedTask(task) {
     div.append($('<span class="question"/>').text(task.question))
     div.append($('<span style="margin-left:10px" class="category"/>').text(task.category))
     div.append($('<br/>'))
-    if (task.grabbedBy)
-        div.append($('<span style="color:green"/>').text('grabbed by ' + task.grabbedBy))
+    if (task.grabbedBy && !task.answer)
+        div.append($('<div style="color:green"/>').text('grabbed by ' + task.grabbedBy))
     if (task.answer)
         div.append($('<div/>').append($('<span style="font-weight:bold;font-size:small"/>').text('answer: ')).append($('<span style="color:grey"/>').text(task.answer)))
     if (task.url)
         div.append($('<div/>').append($('<span style="font-weight:bold;font-size:small"/>').text('see url: ')).append($('<span style="color:grey"/>').text(task.url)))
     if (task.answeredBy)
-        div.append($('<span style="color:green"/>').text('answered by ' + task.answeredBy))
+        div.append($('<div style="color:green"/>').text('answered by ' + task.answeredBy))
+    if (task.grabbedBy && task.answer)
+        div.append($('<div style="color:green"/>').text('grabbed for review by ' + task.grabbedBy))
+    if (task.reviewedBy)
+        div.append($('<div style="color:green"/>').text('reviewed by ' + task.reviewedBy))
     return div
 }
 
@@ -226,8 +310,12 @@ function setStatus(msg) {
 
 function redrawUser(user) {
     var s = 'welcome ' + user.name
-    s += ' (' + (user.answerCount || 0) + ' answers)'
-    g_user.text(s)
+    s += ' (' + (user.answerCount || 0) + ' answers'
+    if (user.editor) {
+        s += ', ' + (user.reviewCount || 0) + ' reviews'
+    }
+    s += ')'
+    g_userBox.text(s)
 }
 
 function updateUser() {
@@ -240,9 +328,10 @@ $(function () {
             document.location.href = '/login'
             return
         }
+        g_user = user
 
         g_status = $('<div/>')
-        g_user = $('<div style="margin-right:10px"/>')
+        g_userBox = $('<div style="margin-right:10px"/>')
         g_output = $('<div class="fill"/>')
         var buttons = $('<div/>')
         buttons.append($('<button/>').html('available&nbsp;tasks').click(function () {
@@ -255,14 +344,18 @@ $(function () {
         var top = $('<div/>')
         top.append(g_status.css('float', 'left'))
         top.append(buttons.css('float', 'right'))
-        top.append(g_user.css('float', 'right'))
+        top.append(g_userBox.css('float', 'right'))
         top.append($('<div style="clear:both"/>'))
 
         $('body').append(_.splitVert(32, null, top, g_output))
 
         redrawUser(user)
         if (user.grabbedTask) {
-            goGrabTask(user.grabbedTask)
+            if (user.taskType == 'availableToReviewAt') {
+                goGrabReviewTask(user.grabbedTask)
+            } else {
+                goGrabTask(user.grabbedTask)
+            }
         } else {
             goGetAvailableTasks()
         }

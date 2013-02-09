@@ -17,6 +17,8 @@ _.has = function (o, k) {
     return o.hasOwnProperty(k)
 }
 
+_.identity = function (e) { return e }
+
 _.each = function (o, func) {
     if (o instanceof Array)
         return o.forEach(func)
@@ -26,6 +28,7 @@ _.each = function (o, func) {
 }
 
 _.map = function (o, func) {
+    if (!func) func = _.identity
     if (o instanceof Array)
         return o.map(func)
     var accum = {}
@@ -36,6 +39,7 @@ _.map = function (o, func) {
 }
 
 _.filter = function (o, func) {
+    if (!func) func = _.identity
     if (o instanceof Array)
         return o.filter(func)
     var accum = {}
@@ -47,6 +51,7 @@ _.filter = function (o, func) {
 }
 
 _.reduce = _.fold = function (o, func, init) {
+    if (!func) func = _.identity
     if (o instanceof Array)
         return o.reduce(func, init)
     var accum = init
@@ -57,6 +62,7 @@ _.reduce = _.fold = function (o, func, init) {
 }
 
 _.some = _.any = function (o, func) {
+    if (!func) func = _.identity
     if (o instanceof Array)
         return o.some(func)
     for (var k in o)
@@ -66,6 +72,7 @@ _.some = _.any = function (o, func) {
 }
 
 _.every = _.all = function (o, func) {
+    if (!func) func = _.identity
     if (o instanceof Array)
         return o.every(func)
     for (var k in o)
@@ -74,7 +81,35 @@ _.every = _.all = function (o, func) {
     return true
 }
 
-_.size = function (o, func) {
+_.min = function (o, func) {
+    if (!func) func = _.identity
+    var bestScore = null
+    var best = null
+    _.each(o, function (v, k) {
+        var score = func(v, k)
+        if (bestScore === null || score < bestScore) {
+            bestScore = score
+            best = v
+        }
+    })
+    return best
+}
+
+_.max = function (o, func) {
+    if (!func) func = _.identity
+    var bestScore = null
+    var best = null
+    _.each(o, function (v, k) {
+        var score = func(v, k)
+        if (bestScore === null || score > bestScore) {
+            bestScore = score
+            best = v
+        }
+    })
+    return best
+}
+
+_.size = function (o) {
     if (o instanceof Array)
         return o.length
     return _.keys(o).length
@@ -119,21 +154,12 @@ _.unPairs = function (a) {
     return accum
 }
 
-_.min = function (o, func) {
-    var accum = null
-    _.each(o, function (v) {
-        if (accum === null || v < accum)
-            accum = v
-    })
-    return accum
-}
-
-_.max = function (o, func) {
-    var accum = null
-    _.each(o, function (v) {
-        if (accum === null || v > accum)
-            accum = v
-    })
+_.pick = function(o) {
+    var accum = {}
+    for (var i = 1; i < arguments.length; i++) {
+        var k = arguments[i]
+        if (k in o) accum[k] = o[k]
+    }
     return accum
 }
 
@@ -286,11 +312,18 @@ _.unescapeXml = function (s) {
 
 function splitSizeHelper(prefix, size) {
     if (size == null) return ""
-    if (size <= 1) return prefix + '="' + Math.round(size) + '%"'
+    if (size <= 1) return prefix + '="' + Math.round(100 * size) + '%"'
     return prefix + '="' + size + 'px"'
 }
 
 _.splitHorz = function (aSize, bSize, a, b) {
+    if (arguments.length == 3) {
+        // backwards compatibility
+        b = a
+        a = bSize
+        aSize = aSize / 100
+        bSize = null
+    }
     aSize = splitSizeHelper('width', aSize)
     bSize = splitSizeHelper('width', bSize)
     var t = $('<table style="width:100%;height:100%"><tr valign="top"><td class="a" ' + aSize + '></td><td class="b" ' + bSize + '></td></tr></table>')
@@ -305,6 +338,13 @@ _.splitHorz = function (aSize, bSize, a, b) {
 }
 
 _.splitVert = function (aSize, bSize, a, b) {
+    if (arguments.length == 3) {
+        // backwards compatibility
+        b = a
+        a = bSize
+        aSize = aSize / 100
+        bSize = null
+    }
     aSize = splitSizeHelper('height', aSize)
     bSize = splitSizeHelper('height', bSize)
     var t = $('<table style="width:100%;height:100%"><tr valign="top"><td class="a" ' + aSize + '></td></tr><tr valign="top"><td class="b" ' + bSize + '></td></tr></table>')

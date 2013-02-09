@@ -33,6 +33,12 @@ _.run(function () {
 	app.get('/', function (req, res) {
 		res.sendfile('./index.html')
 	})
+
+	app.get('/loadtest', function (req, res) {
+		_.run(function () {
+			res.send('response: ' + _.json(getAvailableTasks('availableToAnswerAt', req.user), true))
+		})
+	})
 	
 	var editors = _.makeSet(process.env.EDITORS.split(/,/))
 

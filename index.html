@@ -228,11 +228,11 @@ function drawGrabbaleTask(task) {
 }
 
 function drawGrabbaleReviewTask(task) {
-    var div = $('<div style="width:700px;margin-top:10px"/>')
+    var div = $('<div style="margin-top:10px"/>')
     div.append($('<button style="float:left"/>').text('try to grab').click(function () {
         goGrabReviewTask(task._id)
     }))
-    var right = $('<div style="float:left"/>')
+    var right = $('<div style="width:700px;float:left"/>')
     right.append($('<span style="margin-left:10px" class="question"/>').text(task.question))
     right.append($('<span style="margin-left:10px" class="category"/>').text(task.category))
     right.append($('<br/>'))

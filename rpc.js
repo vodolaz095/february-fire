@@ -1,5 +1,4 @@
-
-// example request: [{func : "add", args : [1, 2]}, {func : "sub", args : [2, 1]}]
+// example request: [{func : "add", arg : [1, 2]}, {func : "sub", arg : [2, 1]}]
 
 module.exports = function (funcs) {
     return function (req, res) {

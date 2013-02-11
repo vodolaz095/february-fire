@@ -57,6 +57,8 @@ _.run(function () {
 	}
 
 	function ungrabTask(u, lockColumn) {
+		db.collection('records').ensureIndex({ grabbedBy : 1 }, { background : true })
+
 		var pre = {}
 		pre.grabbedBy = u._id
 		pre[lockColumn] = { $ne : null }

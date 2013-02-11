@@ -23,8 +23,10 @@ _.run(function () {
 	var MongoStore = require('connect-mongo')(express)
 	app.use(express.session({
 		secret : process.env.SESSION_SECRET,
+		cookie : { maxAge : 24 * 60 * 60 * 1000 },
 		store : new MongoStore({
-			url : process.env.MONGOHQ_URL
+			url : process.env.MONGOHQ_URL,
+			clear_interval : 3600
 		})
 	}))
 
@@ -123,13 +125,16 @@ _.run(function () {
 	function getAvailableTasks(lockColumn, u) {
 		var p = dbPromise()
 
+		db.collection('records').ensureIndex(_.unPairs([[lockColumn, 1], ['_id', 1]]))
+		db.collection('records').ensureIndex(_.unPairs([[lockColumn, 1], ['_id', -1]]))
+
 		var rand = _.md5('' + Math.random())
 		var rands = _.shuffle([[{ $gte : rand }, { _id : 1 }], [{ $lte : rand }, { _id : -1 }]])
 
 		var q = { _id : rands[0][0] }
 		q[lockColumn] = { $lt : _.time() }
 		if (u) q.ban = { $nin : [ u._id ] }
-		db.collection('records').find(q).sort(rands[0][1]).limit(10, p.set)
+		db.collection('records').find(q).sort(_.extend(_.unPairs([[lockColumn, 1]]), rands[0][1])).limit(10, p.set)
 		var data = p.get()
 
 		if (data.length > 0) return data
@@ -137,7 +142,7 @@ _.run(function () {
 		var q = { _id : rands[1][0] }
 		q[lockColumn] = { $lt : _.time() }
 		if (u) q.ban = { $nin : [ u._id ] }
-		db.collection('records').find(q).sort(rands[1][1]).limit(10, p.set)
+		db.collection('records').find(q).sort(_.extend(_.unPairs([[lockColumn, 1]]), rands[1][1])).limit(10, p.set)
 		var data = p.get()
 
 		return data
@@ -293,5 +298,5 @@ _.run(function () {
 	app.listen(process.env.PORT, function() {
 		console.log("go to " + process.env.HOST)
 	})
-	
+
 })

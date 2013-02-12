@@ -349,8 +349,6 @@ $(function () {
 
         $('body').append(_.splitVert(32, null, top, g_output))
 
-        setStatus('<span style="color:red">NOTE!: The system had a bug, and was rejecting answers containing link-breaks.<br/>This is fixed. Sorry about that!</span>')
-
         redrawUser(user)
         if (user.grabbedTask) {
             if (user.taskType == 'availableToReviewAt') {

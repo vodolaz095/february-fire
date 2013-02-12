@@ -197,42 +197,42 @@ _.run(function () {
 
 		grabTask : function (arg, req, res) {
 			var u = req.user
-			if (!u) throw "must be logged in"
-			if (!arg.match(/^.{0,64}$/)) throw "bad input"
+			if (!u) throw new Error("must be logged in")
+			if (!arg.match(/^.{0,64}$/)) throw new Error("bad input: " + arg)
 
 			return grabTask(u, arg, 'availableToAnswerAt')
 		},
 
 		ungrabTask : function (arg, req, res) {
 			var u = req.user
-			if (!u) throw "must be logged in"
+			if (!u) throw new Error("must be logged in")
 
 			return ungrabTask(u, 'availableToAnswerAt')
 		},
 
 		grabReviewTask : function (arg, req, res) {
 			var u = req.user
-			if (!u) throw "must be logged in"
-			if (!arg.match(/^.{0,64}$/)) throw "bad input"
-			if (!_.has(editors, u._id)) throw "access denied"
+			if (!u) throw new Error("must be logged in")
+			if (!arg.match(/^.{0,64}$/)) throw new Error("bad input: " + arg)
+			if (!_.has(editors, u._id)) throw new Error("access denied")
 
 			return grabTask(u, arg, 'availableToReviewAt')
 		},
 
 		ungrabReviewTask : function (arg, req, res) {
 			var u = req.user
-			if (!u) throw "must be logged in"
+			if (!u) throw new Error("must be logged in")
 
 			return ungrabTask(u, 'availableToReviewAt')
 		},
 
 		submitTask : function (arg, req, res) {
 			var u = req.user
-			if (!u) throw "must be logged in"
-			if (!arg.task.match(/^.{0,64}$/)) throw "bad input"
-			if (!arg.answer.match(/^.{150,450}$/)) throw "bad input"
+			if (!u) throw new Error("must be logged in")
+			if (!arg.task.match(/^.{0,64}$/)) throw new Error("bad input: " + arg.task)
+			if (!arg.answer.match(/^.{150,450}$/)) throw new Error("bad input: " + arg.answer)
 			if (arg.url) {
-				if (!arg.url.match(/^https?:\/\/.{2,1024}$/)) throw "bad input"
+				if (!arg.url.match(/^https?:\/\/.{2,1024}$/)) throw new Error("bad input: " + arg.url)
 			}
 
 			if (submitTask(u, arg.task, 'availableToAnswerAt', {
@@ -254,13 +254,13 @@ _.run(function () {
 
 		submitReviewTask : function (arg, req, res) {
 			var u = req.user
-			if (!u) throw "must be logged in"
-			if (!arg.task.match(/^.{0,64}$/)) throw "bad input"
+			if (!u) throw new Error("must be logged in")
+			if (!arg.task.match(/^.{0,64}$/)) throw new Error("bad input: " + arg.task)
 			arg.accept = !!arg.accept
 			if (arg.accept) {
-				if (!arg.answer.match(/^.{150,450}$/)) throw "bad input"
+				if (!arg.answer.match(/^.{150,450}$/)) throw new Error("bad input: " + arg.answer)
 				if (arg.url) {
-					if (!arg.url.match(/^https?:\/\/.{2,1024}$/)) throw "bad input"
+					if (!arg.url.match(/^https?:\/\/.{2,1024}$/)) throw new Error("bad input: " + arg.url)
 				}
 			}
 

@@ -1,6 +1,7 @@
 
-function logError(err) {
+function logError(err, notes) {
     console.log('error: ' + (err.stack || err))
+	console.log('notes: ' + notes)
 }
 
 process.on('uncaughtException', function (err) {
@@ -16,10 +17,10 @@ _.run(function () {
 	var db = require('mongojs').connect(process.env.MONGOHQ_URL)
 
 	db.createCollection('logs', {capped : true, size : 10000}, function () {})
-	logError = function (err) {
-		var msg = 'error: ' + (err.stack || err)
-	    console.log(msg)
-		db.collection('logs').insert({ msg : msg })
+	logError = function (err, notes) {
+	    console.log('error: ' + (err.stack || err))
+		console.log('notes: ' + _.json(notes))
+		db.collection('logs').insert({ error : '' + (err.stack || err), notes : notes })
 	}
 
 	var express = require('express')
@@ -313,7 +314,10 @@ _.run(function () {
 	}))
 
 	app.use(function(err, req, res, next) {
-		logError(err)
+		logError(err, {
+			session : req.session,
+			user : req.user
+		})
 		next(err)
 	})
 

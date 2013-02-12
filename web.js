@@ -1,6 +1,12 @@
 
+function logError(err) {
+    console.log('error: ' + (err.stack || err))
+}
+
 process.on('uncaughtException', function (err) {
-    console.log('uncaught exception: ' + (err.stack || err))
+    try {
+		logError(err)
+	} catch (e) {}
 })
 
 require('./u.js')
@@ -8,6 +14,13 @@ require('./nodeutil.js')
 _.run(function () {
 
 	var db = require('mongojs').connect(process.env.MONGOHQ_URL)
+
+	db.createCollection('logs', {capped : true, size : 10000}, function () {})
+	logError = function (err) {
+		var msg = 'error: ' + (err.stack || err)
+	    console.log(msg)
+		db.collection('logs').insert({ msg : msg })
+	}
 
 	var express = require('express')
 	var app = express.createServer()
@@ -40,6 +53,10 @@ _.run(function () {
 		_.run(function () {
 			res.send('response: ' + _.json(getAvailableTasks('availableToAnswerAt', req.user), true))
 		})
+	})
+
+	app.get('/error', function (req, res) {
+		throw "test error"
 	})
 	
 	var editors = _.makeSet(process.env.EDITORS.split(/,/))
@@ -294,6 +311,11 @@ _.run(function () {
 			}
 		}
 	}))
+
+	app.use(function(err, req, res, next) {
+		logError(err)
+		next(err)
+	})
 
 	app.listen(process.env.PORT, function() {
 		console.log("go to " + process.env.HOST)

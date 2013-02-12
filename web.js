@@ -231,7 +231,7 @@ _.run(function () {
 			var u = req.user
 			if (!u) throw new Error("must be logged in")
 			if (!arg.task.match(/^.{0,64}$/)) throw new Error("bad input: " + arg.task)
-			if (!arg.answer.match(/^.{150,450}$/)) throw new Error("bad input: " + arg.answer)
+			if (!arg.answer.match(/^[\S\s]{150,450}$/)) throw new Error("bad input: " + arg.answer)
 			if (arg.url) {
 				if (!arg.url.match(/^https?:\/\/.{2,1024}$/)) throw new Error("bad input: " + arg.url)
 			}
@@ -259,7 +259,7 @@ _.run(function () {
 			if (!arg.task.match(/^.{0,64}$/)) throw new Error("bad input: " + arg.task)
 			arg.accept = !!arg.accept
 			if (arg.accept) {
-				if (!arg.answer.match(/^.{150,450}$/)) throw new Error("bad input: " + arg.answer)
+				if (!arg.answer.match(/^[\S\s]{150,450}$/)) throw new Error("bad input: " + arg.answer)
 				if (arg.url) {
 					if (!arg.url.match(/^https?:\/\/.{2,1024}$/)) throw new Error("bad input: " + arg.url)
 				}

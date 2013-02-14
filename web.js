@@ -263,6 +263,8 @@ _.run(function () {
 				if (arg.url) {
 					if (!arg.url.match(/^https?:\/\/.{2,1024}$/)) throw new Error("bad input: " + arg.url)
 				}
+			} else {
+				// if (!(arg.reason.length > 0)) throw new Error("bad input: " + arg.reason)
 			}
 
 			var p = dbPromise()
@@ -300,7 +302,8 @@ _.run(function () {
 							answeredBy : oldTask.answeredBy,
 							answeredAt : oldTask.answeredAt,
 							reviewedBy : u._id,
-							reviewedAt : _.time()
+							reviewedAt : _.time(),
+							reviewReason : arg.reason
 						}
 					}
 				})

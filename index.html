@@ -159,15 +159,29 @@ function drawTask(task, review) {
         })
     }))
     if (review) {
-        div.append($('<button style="margin-left:10px"/>').text('reject').click(function () {
-            rpc('submitReviewTask', { task : task._id, accept : false }, function (success) {
-                setStatus(success ? 'successfully submitted task' : 'alas, I failed to submit the task')
-                updateUser()
-                goGetAvailableTasks()
-            })
-        }))
+        div.append($('<br/>'))
+        div.append($('<br/>'))
+        var d = _.splitHorz(null, null, $('<button/>').text('reject').click(function () {
+                var reason = rejectReason.val()
+                if (reason.length == 0) {
+                    alert('must provide a reason to reject')
+                    return
+                }
+                rpc('submitReviewTask', { task : task._id, accept : false, reason : reason }, function (success) {
+                    setStatus(success ? 'successfully submitted task' : 'alas, I failed to submit the task')
+                    updateUser()
+                    goGetAvailableTasks()
+                })
+            }),
+            $('<span style="margin-left:10px"/>').html('reason:&nbsp;')
+        ).css('width', null)
+        var rejectReason = $('<input style="width:100%"/>')
+        div.append(_.splitHorz(0.01, null, d, rejectReason).css('width', '500px').css('height', '1%'))
+    } else {
+        div.append($('<br/>'))
     }
-    div.append($('<button style="margin-left:10px"/>').text('cancel').click(function () {
+    div.append($('<br/>'))
+    div.append($('<button/>').text('cancel').click(function () {
         rpc(review ? 'ungrabReviewTask' : 'ungrabTask', null, function () {
             goGetAvailableTasks()
         })

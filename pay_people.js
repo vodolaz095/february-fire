@@ -119,7 +119,7 @@ _.run(function () {
 		var payCents = u.deservedCents - _.ensure(user, 'paidCents', 0)
 		if (payCents >= 30000) {
 			throw new Error('about to pay someone over $300 for 1 hours work.. is that right?')
-		} else if (payCents >= 50) {
+		} else if (payCents >= 100) {
 			// find the engagement
 			if (!user.engagement && user.ref) {
 				var es = getAll(o, 'hr/v2/engagements', { provider__reference : user.ref, status : "active" })
@@ -142,7 +142,10 @@ _.run(function () {
 				p.get()
 
 				// actually pay them
+
+				// work here
 				console.log("paying: $" + (payCents / 100))
+
 				o.post('hr/v2/teams/' + user.engagementTeam + '/adjustments', {
 					engagement__reference : user.engagement,
 					amount : payCents / 100,

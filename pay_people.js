@@ -64,6 +64,11 @@ _.run(function () {
 	db.collection('records').find({}).forEach(function (err, doc) {
 		if (err || !doc) return p.set(err, doc)
 
+		// work here
+		count++
+		if (count % 100 == 0)
+			console.log("count: " + count)
+
 		if (doc.reviewedBy) {
 			addStat(doc.reviewedBy, 'reviewAcceptCount')
 			addStat(doc.answeredBy, 'answerAcceptedCount')

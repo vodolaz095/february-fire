@@ -328,6 +328,9 @@ function redrawUser(user) {
     if (user.editor) {
         s += ', ' + (user.reviewCount || 0) + ' reviews'
     }
+    if (user.paidCents) {
+        s += ', paid-so-far: $' + (user.paidCents / 100).toFixed(2)
+    }
     s += ')'
     g_userBox.text(s)
 }

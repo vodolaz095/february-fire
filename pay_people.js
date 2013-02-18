@@ -115,10 +115,7 @@ _.run(function () {
 
 	_.each(userStats, function (u, _id) {
 
-		// work here : how much do we actually want to pay them?
-		// this is a conservative estimate
 		u.deservedCents = (u.answerAcceptedCount || 0) * 28 + (u.reviewAcceptCount || 0) * 4
-		u.deservedCents = Math.floor(0.9 * u.deservedCents)
 
 		db.collection('users').findOne({ _id : _id }, p.set)
 		var user = p.get()

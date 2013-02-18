@@ -99,8 +99,11 @@ _.run(function () {
 
 	var payedSoFarCents = 0
 	db.collection('payments').find({}).forEach(function (err, doc) {
+		if (err || !doc) return p.set(err, doc)
+
 		payedSoFarCents += doc.payCents
 	})
+	p.get()
 
 	var odesk = require('node-odesk')
 	var o = new odesk(process.env.ODESK_API_KEY, process.env.ODESK_API_SECRET)

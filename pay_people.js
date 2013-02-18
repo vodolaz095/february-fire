@@ -116,7 +116,7 @@ _.run(function () {
 	_.each(userStats, function (u, _id) {
 
 		// work here
-		if (_id != 'hopec1972') return false
+		if (_id != 'hopec1972') return
 
 		// work here
 		console.log("got here 2")

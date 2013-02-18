@@ -247,7 +247,10 @@ _.run(function () {
 				$push : { ban : u._id }
 			})) {
 				var p = dbPromise()
-				db.collection('users').update({ _id : u._id }, { $inc : { answerCount : 1 }}, p.set)
+				db.collection('users').update({ _id : u._id }, {
+					$inc : { answerCount : 1 },
+					$unset : { grabbedTask : null, taskType : null }
+				}, p.set)
 				p.get()
 				return true
 			}
@@ -309,7 +312,10 @@ _.run(function () {
 				})
 			}
 			if (done) {
-				db.collection('users').update({ _id : u._id }, { $inc : { reviewCount : 1 }}, p.set)
+				db.collection('users').update({ _id : u._id }, {
+					$inc : { reviewCount : 1 },
+					$unset : { grabbedTask : null, taskType : null }
+				}, p.set)
 				p.get()
 				return true
 			}

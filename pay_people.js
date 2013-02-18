@@ -97,6 +97,11 @@ _.run(function () {
 	})
 	p.get()
 
+	var payedSoFarCents = 0
+	db.collection('payments').find({}).forEach(function (err, doc) {
+		payedSoFarCents += doc.payCents
+	})
+
 	var odesk = require('node-odesk')
 	var o = new odesk(process.env.ODESK_API_KEY, process.env.ODESK_API_SECRET)
 
@@ -105,7 +110,6 @@ _.run(function () {
 	o.OAuth.accessToken = payer.accessToken
 	o.OAuth.accessTokenSecret = payer.accessTokenSecret
 
-	var paymentAccum = 0
 	_.each(userStats, function (u, _id) {
 
 		// work here : how much do we actually want to pay them?
@@ -117,9 +121,16 @@ _.run(function () {
 		var user = p.get()
 
 		var payCents = u.deservedCents - _.ensure(user, 'paidCents', 0)
+
+		if (((payedSoFarCents + payCents) / 100) > 1 * (process.env.MAX_PAYOUT || 0)) {
+			throw new Error("we've bumped up against our MAX_PAYOUT threshold.. please make sure everything is ok, and adjust the MAX_PAYOUT environment variable to a bigger value to proceed.")
+		}
+
 		if (payCents >= 30000) {
 			throw new Error('about to pay someone over $300 for 1 hours work.. is that right?')
-		} else if (payCents >= 100) {
+		}
+
+		if (payCents >= 100) {
 			// find the engagement
 			if (!user.engagement && user.ref) {
 				var es = getAll(o, 'hr/v2/engagements', { provider__reference : user.ref, status : "active" })
@@ -155,8 +166,7 @@ _.run(function () {
 				if (!adjustment) throw new Error('failed payment')
 
 				// end payment process
-				paymentAccum += payCents / 100
-
+				payedSoFarCents += payCents
 				db.collection('users').update({ _id : _id }, {
 					$inc : { paidCents : payCents },
 					$set : {
@@ -187,6 +197,6 @@ _.run(function () {
 		p.get()
 	})
 
-	console.log("payed: $" + paymentAccum)
+	console.log("total paid so far: $" + (payedSoFarCents / 100))
 	process.exit(1)
 })

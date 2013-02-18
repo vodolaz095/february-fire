@@ -13,6 +13,7 @@ export ODESK_API_SECRET=do_not_check_into_github
 export EDITORS=some,list,of,usernames
 export PAYER=richy
 export TEAMS=12345,23456
+export MAX_PAYOUT=10
 
 foreman start
 ```
@@ -32,9 +33,11 @@ heroku config:set ODESK_API_SECRET=do_not_check_into_github
 heroku config:set EDITORS=some,list,of,usernames
 heroku config:set PAYER=richy
 heroku config:set TEAMS=12345,23456
+heroku config:set MAX_PAYOUT=1000
 
 git push heroku master
 heroku addons:add mongohq:small
 heroku ps:scale web=2
+heroku addons:add scheduler:standard
 heroku open
 ```

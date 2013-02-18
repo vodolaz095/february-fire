@@ -64,11 +64,6 @@ _.run(function () {
 	db.collection('records').find({}).forEach(function (err, doc) {
 		if (err || !doc) return p.set(err, doc)
 
-		// work here
-		count++
-		if (count % 100 == 0)
-			console.log("count: " + count)
-
 		if (doc.reviewedBy) {
 			addStat(doc.reviewedBy, 'reviewAcceptCount')
 			addStat(doc.answeredBy, 'answerAcceptedCount')
@@ -110,37 +105,28 @@ _.run(function () {
 	o.OAuth.accessToken = payer.accessToken
 	o.OAuth.accessTokenSecret = payer.accessTokenSecret
 
-	// work here
-	console.log("got here 1")
-
+	var paymentAccum = 0
 	_.each(userStats, function (u, _id) {
 
-		// work here
-		if (_id != 'hopec1972') return
-
-		// work here
-		console.log("got here 2")
-
-
+		// work here : how much do we actually want to pay them?
+		// this is a conservative estimate
 		u.deservedCents = (u.answerAcceptedCount || 0) * 28 + (u.reviewAcceptCount || 0) * 4
+		u.deservedCents = Math.floor(0.9 * u.deservedCents)
 
 		db.collection('users').findOne({ _id : _id }, p.set)
 		var user = p.get()
 
 		var payCents = u.deservedCents - _.ensure(user, 'paidCents', 0)
-		if (payCents >= 50) {
+		if (payCents >= 30000) {
+			throw new Error('about to pay someone over $300 for 1 hours work.. is that right?')
+		} else if (payCents >= 50) {
 			// find the engagement
 			if (!user.engagement && user.ref) {
-
-				// work here
-				console.log("got here 3")
-
 				var es = getAll(o, 'hr/v2/engagements', { provider__reference : user.ref, status : "active" })
 				var e = _.find(es, function (e) { return _.has(teams, e.buyer_team__reference) })
 				if (e) {
 					user.engagement = e.reference
 					user.engagementTeam = e.buyer_team__reference
-					user.engagementTeamName = e.buyer_team__name
 				}
 			}
 
@@ -156,17 +142,6 @@ _.run(function () {
 				p.get()
 
 				// actually pay them
-
-
-				// work here
-				var x = {
-					engagement__reference : user.engagement,
-					amount : payCents / 100,
-					comments : 'payment for mocska. thanks!'
-				}
-				console.log("x = " + _.json(x, true))
-
-
 				o.post('hr/v2/teams/' + user.engagementTeam + '/adjustments', {
 					engagement__reference : user.engagement,
 					amount : payCents / 100,
@@ -176,6 +151,8 @@ _.run(function () {
 				if (!adjustment) throw new Error('failed payment')
 
 				// end payment process
+				paymentAccum += payCents / 100
+
 				db.collection('users').update({ _id : _id }, {
 					$inc : { paidCents : payCents },
 					$set : {
@@ -187,9 +164,6 @@ _.run(function () {
 
 				db.collection('payments').update({ _id : payment._id }, { $set : { endedAt : _.time(), adjustment : adjustment } }, p.set)
 				p.get()
-
-				// work here
-				throw new Error('test error: just paid: ' + _id)
 			}
 		}
 
@@ -209,5 +183,6 @@ _.run(function () {
 		p.get()
 	})
 
+	console.log("payed: $" + paymentAccum)
 	process.exit(1)
 })

@@ -110,10 +110,16 @@ _.run(function () {
 	o.OAuth.accessToken = payer.accessToken
 	o.OAuth.accessTokenSecret = payer.accessTokenSecret
 
+	// work here
+	console.log("got here 1")
+
 	_.each(userStats, function (u, _id) {
 
 		// work here
 		if (_id != 'hopec1972') return false
+
+		// work here
+		console.log("got here 2")
 
 
 		u.deservedCents = (u.answerAcceptedCount || 0) * 28 + (u.reviewAcceptCount || 0) * 4
@@ -125,6 +131,10 @@ _.run(function () {
 		if (payCents >= 50) {
 			// find the engagement
 			if (!user.engagement && user.ref) {
+
+				// work here
+				console.log("got here 3")
+
 				var es = getAll(o, 'hr/v2/engagements', { provider__reference : user.ref, status : "active" })
 				var e = _.find(es, function (e) { return _.has(teams, e.buyer_team__reference) })
 				if (e) {

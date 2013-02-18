@@ -142,6 +142,7 @@ _.run(function () {
 				p.get()
 
 				// actually pay them
+				console.log("paying: $" + (payCents / 100))
 				o.post('hr/v2/teams/' + user.engagementTeam + '/adjustments', {
 					engagement__reference : user.engagement,
 					amount : payCents / 100,

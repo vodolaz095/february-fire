@@ -39,6 +39,20 @@ _.promise = function () {
     }
 }
 
+_.promiseErr = function () {
+    var p = _.promise()
+    return {
+        set : function (err, data) {
+            p.set([err, data])
+        },
+        get : function () {
+            var x = p.get()
+            if (x[0]) throw x[0]
+            return x[1]
+        }
+    }
+}
+
 _.consume = function (input, encoding) {
     if (encoding == 'buffer') {
         var buffer = new Buffer(1 * input.headers['content-length'])

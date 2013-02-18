@@ -20,11 +20,17 @@ _.has = function (o, k) {
 _.identity = function (e) { return e }
 
 _.each = function (o, func) {
-    if (o instanceof Array)
-        return o.forEach(func)
-    for (var k in o)
-        if (o.hasOwnProperty(k))
-            func(o[k], k)
+    if (!func) func = _.identity
+    if (o instanceof Array) {
+        for (var i = 0; i < o.length; i++)
+            if (func(o[i], i) == false)
+                break
+    } else {
+        for (var k in o)
+            if (o.hasOwnProperty(k))
+                if (func(o[k], k) == false)
+                    break
+    }
 }
 
 _.map = function (o, func) {
@@ -109,6 +115,18 @@ _.max = function (o, func) {
     return best
 }
 
+_.find = function (o, func) {
+    if (!func) func = _.identity
+    var found = null
+    _.each(o, function (v, k) {
+        if (func(v, k)) {
+            found = v
+            return false
+        }
+    })
+    return found
+}
+
 _.size = function (o) {
     if (o instanceof Array)
         return o.length
@@ -153,20 +171,36 @@ _.pairs = function (o) {
     return accum
 }
 
-_.unPairs = function (a) {
+_.object = _.unPairs = function (a, b) {
     var accum = {}
-    _.each(a, function (e) {
-        accum[e[0]] = e[1]
-    })
+    if (b) {
+        _.each(a, function (k, i) {
+            accum[k] = b[i]
+        })
+    } else {
+        _.each(a, function (e) {
+            accum[e[0]] = e[1]
+        })
+    }
     return accum
 }
 
-_.pick = function(o) {
+_.pick = function (o) {
     var accum = {}
     for (var i = 1; i < arguments.length; i++) {
         var k = arguments[i]
-        if (k in o) accum[k] = o[k]
+        if (_.has(o, k)) accum[k] = o[k]
     }
+    return accum
+}
+
+_.omit = function (o) {
+    var omits = _.makeSet(_.toArray(arguments).slice(1))
+    var accum = {}
+    _.each(o, function (v, k) {
+        if (!_.has(omits, k))
+            accum[k] = v
+    })
     return accum
 }
 
@@ -184,10 +218,12 @@ _.makeSet = function (a) {
     return s
 }
 
-_.bagAdd = function (bag, key) {
+_.bagAdd = function (bag, key, amount) {
+    if (amount == null) amount = 1
     if (!_.has(bag, key))
         bag[key] = 0
-    return ++bag[key]
+    bag[key] += amount
+    return bag[key]
 }
 
 _.lerp = function (t0, v0, t1, v1, t) {
@@ -323,7 +359,8 @@ function splitSizeHelper(prefix, size) {
     return prefix + '="' + size + 'px"'
 }
 
-_.splitHorz = function (aSize, bSize, a, b) {
+_.splitHorz = function (aSize, bSize, a, b, fill) {
+    if (fill === undefined) fill = true
     if (arguments.length == 3) {
         // backwards compatibility
         b = a
@@ -333,7 +370,7 @@ _.splitHorz = function (aSize, bSize, a, b) {
     }
     aSize = splitSizeHelper('width', aSize)
     bSize = splitSizeHelper('width', bSize)
-    var t = $('<table style="width:100%;height:100%"><tr valign="top"><td class="a" ' + aSize + '></td><td class="b" ' + bSize + '></td></tr></table>')
+    var t = $('<table ' + (fill ? 'style="width:100%;height:100%"' : '') + '><tr valign="top"><td class="a" ' + aSize + '></td><td class="b" ' + bSize + '></td></tr></table>')
     // don't do this:
     // t.find('.a').append(a)
     // t.find('.b').append(b)
@@ -344,7 +381,8 @@ _.splitHorz = function (aSize, bSize, a, b) {
     return t
 }
 
-_.splitVert = function (aSize, bSize, a, b) {
+_.splitVert = function (aSize, bSize, a, b, fill) {
+    if (fill === undefined) fill = true
     if (arguments.length == 3) {
         // backwards compatibility
         b = a
@@ -354,7 +392,7 @@ _.splitVert = function (aSize, bSize, a, b) {
     }
     aSize = splitSizeHelper('height', aSize)
     bSize = splitSizeHelper('height', bSize)
-    var t = $('<table style="width:100%;height:100%"><tr valign="top"><td class="a" ' + aSize + '></td></tr><tr valign="top"><td class="b" ' + bSize + '></td></tr></table>')
+    var t = $('<table ' + (fill ? 'style="width:100%;height:100%"' : '') + '><tr valign="top"><td class="a" ' + aSize + '></td></tr><tr valign="top"><td class="b" ' + bSize + '></td></tr></table>')
     // don't do this:
     // t.find('.a').append(a)
     // t.find('.b').append(b)

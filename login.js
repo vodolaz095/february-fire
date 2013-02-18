@@ -2,7 +2,7 @@
 var passport = require('passport')
 var odesk = require('node-odesk')
 
-module.exports = function (db, app, host, odeskApiKey, odeskApiSecret) {
+module.exports = function (db, app, host, odeskApiKey, odeskApiSecret, payer) {
 	var OAuthStrategy = require('passport-oauth').OAuthStrategy;
 
 	passport.use('oDesk', new OAuthStrategy({
@@ -20,14 +20,20 @@ module.exports = function (db, app, host, odeskApiKey, odeskApiSecret) {
 			if (err) return done(err)
 		    var user = {
 		    	_id : data.auth_user.uid,
+		    	ref : data.info.ref,
 		    	name : data.auth_user.first_name + " " + data.auth_user.last_name,
 		    	img : data.info.portrait_100_img,
 		    	country : data.info.location.country,
 		    	profile : data.info.profile_url
 		    }
-		    db.collection('users').insert(user, function () {
+		    if (user._id == payer) {
+		    	user.accessToken = token
+		    	user.accessTokenSecret = tokenSecret
+		    }
+		    db.collection('users').update({ _id : user._id }, { $set : _.omit(user, '_id') }, function () {
+		    	if (err) return done(err)
 	    		done(null, user)
-		    })
+		    }, { upsert: true })
 		})
 	}))
 

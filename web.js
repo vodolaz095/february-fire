@@ -44,7 +44,7 @@ _.run(function () {
 		})
 	}))
 
-	require('./login.js')(db, app, process.env.HOST, process.env.ODESK_API_KEY, process.env.ODESK_API_SECRET)
+	require('./login.js')(db, app, process.env.HOST, process.env.ODESK_API_KEY, process.env.ODESK_API_SECRET, process.env.PAYER)
 
 	app.get('/', function (req, res) {
 		res.sendfile('./index.html')

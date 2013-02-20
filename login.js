@@ -30,10 +30,11 @@ module.exports = function (db, app, host, odeskApiKey, odeskApiSecret, payer) {
 		    	user.accessToken = token
 		    	user.accessTokenSecret = tokenSecret
 		    }
-		    db.collection('users').update({ _id : user._id }, { $set : _.omit(user, '_id') }, function () {
+
+		    db.collection('users').update({ _id : user._id }, { $set : _.omit(user, '_id') }, { upsert: true }, function () {
 		    	if (err) return done(err)
 	    		done(null, user)
-		    }, { upsert: true })
+		    })
 		})
 	}))
 

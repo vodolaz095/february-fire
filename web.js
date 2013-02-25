@@ -296,7 +296,9 @@ _.run(function () {
 						answer : null,
 						url : null,
 						answeredBy : null,
-						answeredAt : null,
+						answeredAt : null
+					},
+					$set : {
 						availableToAnswerAt : 0
 					},
 					$push : {

@@ -198,6 +198,25 @@ function drawTask(task, review) {
         else
             goGrabTask(task._id)
     }))
+
+    if (!review) {
+        div.append($('<br/>'))
+        div.append($('<br/>'))
+        div.append($('<button/>').text('reject question as bad question').click(function () {
+            while (true) {
+                var x = prompt("please provide a reason for rejecting the question:")
+                if (x == null) break
+                if (!x) continue
+                rpc('rejectQuestion', { task : task._id, reason : x }, function (success) {
+                    setStatus(success ? 'success' : 'oops, something went wrong')
+                    updateUser()
+                    goGetAvailableTasks()
+                })
+                break
+            }
+        }))
+    }
+
     function updateTimespan() {
         timespan.text(Math.round(((review ? task.availableToReviewAt : task.availableToAnswerAt) - _.time()) / (1000 * 60)))
     }

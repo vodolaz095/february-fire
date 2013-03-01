@@ -257,6 +257,29 @@ _.run(function () {
 			}
 		},
 
+		rejectQuestion : function (arg, req, res) {
+			var u = req.user
+			if (!u) throw new Error("must be logged in")
+			if (!arg.task.match(/^.{0,64}$/)) throw new Error("bad input: " + arg.task)
+			if (!arg.reason.match(/^[\S\s]{1,1024}$/)) throw new Error("bad input: " + arg.answer)
+
+			if (submitTask(u, arg.task, 'availableToAnswerAt', {
+				$set : {
+					rejectReason : arg.reason,
+					rejectedBy : u._id,
+					rejectedAt : _.time()
+				},
+				$push : { ban : u._id }
+			})) {
+				var p = dbPromise()
+				db.collection('users').update({ _id : u._id }, {
+					$unset : { grabbedTask : null, taskType : null }
+				}, p.set)
+				p.get()
+				return true
+			}
+		},
+
 		submitReviewTask : function (arg, req, res) {
 			var u = req.user
 			if (!u) throw new Error("must be logged in")

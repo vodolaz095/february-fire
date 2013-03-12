@@ -1,29 +1,32 @@
 
+_.escapeCsv = function (s) {
+    if (s && s.match(/[,"\n]/))
+        return '"' + s.replace(/"/g, '""') + '"'
+    return s || ""
+}
+
+_.unescapeCsv = function (s) {
+    if (s[0] == '"')
+        return s.slice(1, s.length - 1).replace(/""/g, '"')
+    return s
+}
+
+_.csvLine = function (data) {
+    return _.map(_.values(data), _.escapeCsv).join(',')
+}
+
 _.csv = function (data, headers) {
     if (headers === undefined) headers = true
     if (typeof(data) == 'object') {
         var s = []
-        function escapeCsv(s) {
-            if (s.match(/[,"\n]/))
-                return '"' + s.replace(/"/g, '""') + '"'
-            return s
-        }
-        function escapeLine(a) {
-            return _.map(_.values(a), escapeCsv).join(',')
-        }
         if (headers)
-            s.push(escapeLine(_.keys(data[0])))
+            s.push(_.csvLine(_.keys(data[0])))
         _.each(data, function (row) {
-            s.push(escapeLine(row))
+            s.push(_.csvLine(row))
         })
         return s.join('\n')
 
     } else if (typeof(data) == 'string') {
-        function unescapeCsv(s) {
-            if (s[0] == '"')
-                return s.slice(1, s.length - 1).replace(/""/g, '"')
-            return s
-        }
         var bins = []
         var bin = []
         var re = /(^|,|\n)("(""|[^"])*"|[^,\r\n]*)/g
@@ -33,7 +36,7 @@ _.csv = function (data, headers) {
                 bins.push(bin)
                 bin = []
             }
-            bin.push(unescapeCsv(r[2]))
+            bin.push(_.unescapeCsv(r[2]))
         }
         if (bin.length > 0)
             bins.push(bin)

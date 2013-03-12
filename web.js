@@ -60,7 +60,46 @@ _.run(function () {
 	app.get('/error', function (req, res) {
 		throw "test error"
 	})
-	
+
+	require('./csv.js')
+    app.get('/csv', function (req, res) {
+    	_.run(function () {
+	        var batch = req.query.batch
+	        if (!batch) throw new Error("please specify a batch")       
+	        var begin = req.query.begin ? new Date(req.query.begin + " UTC").getTime() : 0
+	        var end = req.query.end ? new Date(req.query.end + " UTC").getTime() + (1000 * 60 * 60 * 24) : Number.MAX_VALUE
+
+	        var p = _.promiseErr()
+	        var cur = db.records.find({ batch : batch, doneAt : { $gte : begin, $lt : end } })
+
+            res.writeHead(200, {
+                'Content-Type' : 'text/csv; charset=utf-8',
+                'Content-disposition' : 'attachment; filename=batch' + '_' + batch + (req.query.begin ? '_from_' + req.query.begin : '') + (req.query.end ? '_through_' + req.query.end : '') + '.csv'
+            })
+            res.write(_.csvLine(['QUESTION', 'CATEGORY', 'ANSWER', 'URL']) + '\n')
+	        cur.on('data', function (r) {
+	        	if (r.rejectedBy) {
+	        		res.write(_.csvLine([
+	        			r.question,
+	        			r.category,
+	        			'BAD QUESTION',
+	        			r.rejectReason
+        			]) + '\n')
+	        	} else {
+	        		res.write(_.csvLine([
+	        			r.question,
+	        			r.category,
+	        			r.answer,
+	        			r.url
+        			]) + '\n')
+	        	}
+	        })
+	        cur.on('end', function () {
+	        	res.end()
+	        })
+		})
+    })
+
 	var editors = _.makeSet(process.env.EDITORS.split(/,/))
 
 	function dbPromise() {

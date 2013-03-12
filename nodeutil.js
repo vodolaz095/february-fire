@@ -117,13 +117,15 @@ _.wget = function (url, params, encoding) {
     if (params && params.length != null) {
         data = params
         o.headers = {
-            "Content-Length" : data.length
+            "Content-Type" : "application/x-www-form-urlencoded; charset=UTF-8",
+            "Content-Length" : Buffer.byteLength(data, 'utf8')
         }
+        dataEnc = "utf8"
     } else {
         data = _.values(_.map(params, function (v, k) { return k + "=" + encodeURIComponent(v) })).join('&')
         
         o.headers = {
-            "Content-Type" : "application/x-www-form-urlencoded",
+            "Content-Type" : "application/x-www-form-urlencoded; charset=UTF-8",
             "Content-Length" : Buffer.byteLength(data, 'utf8')
         }
         

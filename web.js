@@ -14,7 +14,7 @@ require('./u.js')
 require('./nodeutil.js')
 _.run(function () {
 
-	var db = require('mongojs').connect(process.env.MONGOHQ_URL)
+	var db = require('mongojs').connect(process.env.MONGOHQ_URL, ['records'])
 
 	db.createCollection('logs', {capped : true, size : 10000}, function () {})
 	logError = function (err, notes) {
@@ -263,11 +263,13 @@ _.run(function () {
 			if (!arg.task.match(/^.{0,64}$/)) throw new Error("bad input: " + arg.task)
 			if (!arg.reason.match(/^[\S\s]{1,1024}$/)) throw new Error("bad input: " + arg.answer)
 
+			var now = _.time()
 			if (submitTask(u, arg.task, 'availableToAnswerAt', {
 				$set : {
 					rejectReason : arg.reason,
 					rejectedBy : u._id,
-					rejectedAt : _.time()
+					rejectedAt : now,
+					doneAt : now
 				},
 				$push : { ban : u._id }
 			})) {
@@ -299,12 +301,14 @@ _.run(function () {
 			var oldTask = p.get()
 
 			if (arg.accept) {
+				var now = _.time()
 				var done = submitTask(u, arg.task, 'availableToReviewAt', { 
 					$set : {
 						answer : arg.answer,
 						url : arg.url,
 						reviewedBy : u._id,
-						reviewedAt : _.time()
+						reviewedAt : now,
+						doneAt : now
 					},
 					$push : {
 						history : {

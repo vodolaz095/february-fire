@@ -399,6 +399,11 @@ _.run(function () {
 		next(err)
 	})
 
+	app.use(express.errorHandler({
+		dumpExceptions: true,
+		showStack: true
+	}))
+
 	app.listen(process.env.PORT, function() {
 		console.log("go to " + process.env.HOST)
 	})

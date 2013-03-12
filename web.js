@@ -100,6 +100,35 @@ _.run(function () {
 		})
     })
 
+	app.get('/counts', function (req, res) {
+		_.run(function () {
+	        var batch = req.query.batch
+	        if (!batch) throw new Error("please specify a batch")
+
+			var p = _.promiseErr()
+
+			db.collection('records').find({batch:batch, answeredBy:{$exists:true}}).count(p.set)
+			var a = p.get()
+
+			db.collection('records').find({batch:batch, reviewedBy:{$exists:true}}).count(p.set)
+			var r = p.get()
+
+			db.collection('records').find({batch:batch, rejectedBy:{$exists:true}}).count(p.set)
+			var rj = p.get()
+
+			db.collection('records').find({batch:batch}).count(p.set)
+			var t = p.get()
+
+			var s = 'answered count: ' + a + ' (' + (a / t * 100).toFixed(1) + '%)<br/>'
+			s += 'reviewed count: ' + r + ' (' + (r / t * 100).toFixed(1) + '%)<br/>'
+			s += 'rejected questions: ' + rj + ' (' + (rj / t * 100).toFixed(1) + '%)<br/>'
+			s += '<br/>'
+			s += 'finished count: ' + (r + rj) + ' (' + ((r + rj) / t * 100).toFixed(1) + '%)<br/>'
+			s += 'total count: ' + t + '<br/>'
+			res.send(s)
+		})
+	})
+	
 	var editors = _.makeSet(process.env.EDITORS.split(/,/))
 
 	function dbPromise() {

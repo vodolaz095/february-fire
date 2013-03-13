@@ -14,7 +14,7 @@ require('./u.js')
 require('./nodeutil.js')
 _.run(function () {
 
-	var db = require('mongojs').connect(process.env.MONGOHQ_URL, ['records'])
+	var db = require('mongojs').connect(process.env.MONGOHQ_URL, ['records', 'rejects'])
 
 	db.createCollection('logs', {capped : true, size : 10000}, function () {})
 	logError = function (err, notes) {
@@ -93,6 +93,39 @@ _.run(function () {
 	        			r.url
         			]) + '\n')
 	        	}
+	        })
+	        cur.on('end', function () {
+	        	res.end()
+	        })
+		})
+    })
+
+    app.get('/rejects', function (req, res) {
+    	_.run(function () {
+            res.writeHead(200, {
+                'Content-Type' : 'text/csv; charset=utf-8',
+                'Content-disposition' : 'attachment; filename=rejects' + (req.query.batch ? '_' + req.query.batch : '') + (req.query.begin ? '_from_' + req.query.begin : '') + (req.query.end ? '_through_' + req.query.end : '') + '.csv'
+            })
+            res.write(_.csvLine(['QUESTION', 'CATEGORY', 'ANSWER', 'URL', 'AUTHOR', 'REVIEWER', 'REASON']) + '\n')
+
+    		var q = {}
+    		if (req.query.batch)
+    			q.batch = req.query.batch
+    		if (req.query.begin)
+    			_.ensure(q, 'reviewedAt', {}).$gte = new Date(req.query.begin + " UTC").getTime()
+    		if (req.query.end)
+    			_.ensure(q, 'reviewedAt', {}).$lt = new Date(req.query.end + " UTC").getTime() + (1000 * 60 * 60 * 24)
+	        var cur = db.rejects.find(q)
+	        cur.on('data', function (r) {
+        		res.write(_.csvLine([
+        			r.question,
+        			r.category,
+        			r.answer,
+        			r.url,
+        			r.answeredBy,
+        			r.reviewedBy,
+        			r.reviewReason
+    			]) + '\n')
 	        })
 	        cur.on('end', function () {
 	        	res.end()

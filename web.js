@@ -14,7 +14,7 @@ require('./u.js')
 require('./nodeutil.js')
 _.run(function () {
 
-	var db = require('mongojs').connect(process.env.MONGOHQ_URL, ['records', 'rejects'])
+	var db = require('mongojs').connect(process.env.MONGOHQ_URL, ['records', 'rejects', 'users'])
 
 	db.createCollection('logs', {capped : true, size : 10000}, function () {})
 	logError = function (err, notes) {
@@ -108,6 +108,13 @@ _.run(function () {
             })
             res.write(_.csvLine(['QUESTION', 'CATEGORY', 'ANSWER', 'URL', 'AUTHOR', 'REVIEWER', 'REASON']) + '\n')
 
+            var userToNameMap = {}
+            var p = _.promiseErr()
+            db.users.find({}, {_id : 1, name : 1}, p.set)
+            _.each(p.get(), function (u) {
+            	userToNameMap[u._id] = u.name
+            })
+
     		var q = {}
     		if (req.query.batch)
     			q.batch = req.query.batch
@@ -122,8 +129,8 @@ _.run(function () {
         			r.category,
         			r.answer,
         			r.url,
-        			r.answeredBy,
-        			r.reviewedBy,
+        			userToNameMap[r.answeredBy],
+        			userToNameMap[r.reviewedBy],
         			r.reviewReason
     			]) + '\n')
 	        })

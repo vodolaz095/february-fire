@@ -82,15 +82,6 @@ _.run(function () {
 				addStat(h.reviewedBy, h.reviewAccept ? 'reviewAcceptCount' : 'reviewRejectCount')
 				if (!h.reviewAccept) {
 					addStat(h.answeredBy, 'answerRejectedCount')
-					_.ensure(userStats, h.answeredBy, 'rejects', []).push({
-						question : doc.question,
-						answer : h.answer,
-						url : h.url,
-						answeredAt : h.answeredAt,
-						reviewedBy : h.reviewedBy,
-						reviewedAt : h.reviewedAt,
-						reviewReason : h.reviewReason
-					})
 				}
 			}
 		})
@@ -181,16 +172,6 @@ _.run(function () {
 			}
 		}
 
-		if (u.rejects) {
-			var rejects = u.rejects
-			delete u.rejects
-			rejects.sort(function (a, b) { return b.answeredAt - a.answeredAt })
-			db.collection('rejects').update({ _id : _id }, {
-				$set : { rejects : rejects }
-			}, { upsert : true }, p.set)
-			p.get()
-		}
-
 		db.collection('users').update({ _id : _id }, {
 			$set : { stats : u }
 		}, p.set)
@@ -198,5 +179,26 @@ _.run(function () {
 	})
 
 	console.log("total paid so far: $" + (payedSoFarCents / 100))
+
+	db.eval("" + function () {
+		var recs = db.records.find()
+		for (var i = 0; i < recs.length(); i++) {
+			var rec = recs[i]
+			if (rec.history) {
+				for (var ii = 0; ii < rec.history.length; ii++) {
+					var h = rec.history[ii]
+					if (h.reviewedBy && !h.reviewAccept) {
+						h._id = h.answeredBy + " " + h.answeredAt
+						h.batch = rec.batch
+						h.question = rec.question
+						h.category = rec.category
+						db.rejects.insert(h)
+					}
+				}
+			}
+		}
+	}, { nolock : true }, p.set)
+	p.get()
+
 	process.exit(1)
 })

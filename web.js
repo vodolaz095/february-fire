@@ -1,4 +1,20 @@
 
+function defaultEnv(key, val) {
+    if (!process.env[key])
+        process.env[key] = val
+}
+defaultEnv("PORT", 5000)
+defaultEnv("HOST", "http://localhost:5000")
+defaultEnv("NODE_ENV", "production")
+defaultEnv("MONGOHQ_URL", "mongodb://localhost:27017/februaryfire")
+defaultEnv("SESSION_SECRET", "blahblah")
+defaultEnv("ODESK_API_KEY", "3f448b92c4aaf8918c0106bd164a1656")
+defaultEnv("ODESK_API_SECRET", "e6a71b4f05467054")
+
+defaultEnv("EDITORS", "greglittle,gregtest")
+defaultEnv("PAYER", "greglittle")
+defaultEnv("TEAMS", "12345,23456")
+
 function logError(err, notes) {
     console.log('error: ' + (err.stack || err))
 	console.log('notes: ' + notes)
@@ -24,7 +40,7 @@ _.run(function () {
 	}
 
 	var express = require('express')
-	var app = express.createServer()
+	var app = express()
 
 	app.use(express.cookieParser())
 	app.use(function (req, res, next) {
@@ -472,6 +488,43 @@ _.run(function () {
 		dumpExceptions: true,
 		showStack: true
 	}))
+
+	if (process.argv[2] == 'test') {
+		// add test data
+		function randomText(min, max) {
+		    var chars = 'abcdefghijklmnopqrstuvwxyz',
+		        length = min + Math.round(Math.random()*(max-min)),
+		        str = "",
+		        lis = false;
+		    
+		    for(var i=0; i<length; i++){
+		        
+		        if(i!=0 && i!=length-1 && !lis && Math.floor(Math.random()*5) == 4){
+		          str+=" ";
+		          lis = true;
+		        } else {
+		         str+=chars.charAt(Math.floor(Math.random() * chars.length));
+		           lis = false;
+		        }
+		    }
+		    
+		    return str;
+		}
+
+		function randomRecord() {
+			return {
+				_id : _.md5("" + Math.random()),
+				batch : "fake",
+				question : randomText(20, 100),
+				category : randomText(8, 15),
+				availableToAnswerAt : 0
+			}
+		}
+
+		for (var i = 0; i < 20; i++) {
+			_.p(db.records.insert(randomRecord(), _.p()))
+		}
+	}
 
 	app.listen(process.env.PORT, function() {
 		console.log("go to " + process.env.HOST)

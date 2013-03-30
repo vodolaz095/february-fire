@@ -73,6 +73,48 @@ _.promiseErr = function () {
     }
 }
 
+_.p = _.prom = function () {
+    var f = Fiber.current
+    if (!f.promise) {
+        f.promise = "waiting"
+        return function () {
+            if (arguments.length <= 1) {
+                var arg = arguments[0]
+                if (arg instanceof Error)
+                    f.promise = { err : arg }
+                else
+                    f.promise = { val : arg }
+            } else {
+                f.promise = {
+                    err : arguments[0],
+                    val : arguments[1]
+                }
+            }
+            _.run(f)
+        }
+    } else {
+        while (f.promise == "waiting") _.yield()
+        var p = f.promise 
+        delete f.promise
+        if (p.err) throw p.err
+        return p.val
+    }
+}
+
+_.parallel = function (funcs) {
+    var set = _.prom()
+    var remaining = funcs.length
+    _.each(funcs, function (f) {
+        _.run(function () {
+            f()
+            remaining--
+            if (remaining <= 0) set()
+        })
+    })
+    if (remaining <= 0) set()
+    return _.prom()
+}
+
 _.consume = function (input, encoding) {
     if (encoding == 'buffer') {
         var buffer = new Buffer(1 * input.headers['content-length'])

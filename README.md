@@ -4,18 +4,8 @@ february-fire
 to run locally:
 
 ```
-export PORT=5000
-export HOST=http://localhost:5000
-export MONGOHQ_URL=mongodb://localhost:27017/test
-export SESSION_SECRET=doesnt_matter_locally
-export ODESK_API_KEY=do_not_check_into_github
-export ODESK_API_SECRET=do_not_check_into_github
-export EDITORS=some,list,of,usernames
-export PAYER=richy
-export TEAMS=12345,23456
-export MAX_PAYOUT=10
-
-foreman start
+mongod &
+node web.js test
 ```
 
 ===

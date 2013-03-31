@@ -327,12 +327,6 @@ function goGetAvailableTasks() {
     }
     if (g_user.editor){
         rpc('getAvailableTasks', null, 'getAvailableReviewTasks', null, helper);
-        rpc('getAdmins',null,function(admins){
-            showAdmins(admins);
-        });
-        rpc('getEditors',null,function(editors){
-            showEditors(editors);
-        });
     }
     else
         rpc('getAvailableTasks', null, helper)
@@ -403,11 +397,25 @@ $(function () {
         g_output = $('<div class="fill"/>')
         var buttons = $('<div/>')
         buttons.append($('<button/>').html('available&nbsp;tasks').click(function () {
+            g_output.empty()
             goGetAvailableTasks()
         }))
         buttons.append($('<button/>').html('activity&nbsp;feed').click(function () {
+            g_output.empty()
             goGetFeed()
-        }))
+        }));
+        if (g_user.admin){
+        buttons.append($('<button/>').html('admin').click(function () {
+            g_output.empty();
+            rpc('getAdmins',null,function(admins){
+                showAdmins(admins);
+            });
+            rpc('getEditors',null,function(editors){
+                showEditors(editors);
+            });
+        }));
+        }
+
 
         var top = $('<div/>')
         top.append(g_status.css('float', 'left'))

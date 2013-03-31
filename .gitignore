@@ -1,3 +1,5 @@
-
+.idea/
+runDev.sh
 /_*
 .DS_*
+mode_modules/

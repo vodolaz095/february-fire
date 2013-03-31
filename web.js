@@ -64,7 +64,7 @@ _.run(function () {
 	require('./login.js')(db, app, process.env.HOST, process.env.ODESK_API_KEY, process.env.ODESK_API_SECRET, process.env.PAYER)
 
 	app.get('/', function (req, res) {
-		res.sendfile('./index.html')
+        res.sendfile('./index.html');
 	})
 
 	app.get('/loadtest', function (req, res) {
@@ -305,6 +305,24 @@ _.run(function () {
 				return u
 			}
 		},
+
+        getAdmins: function(arg,req,res){
+            var u=req.user;
+            if(u){
+                var p = dbPromise();
+                db.collection('users').find({admin:true}).limit(10, p.set);
+                return p.get()
+            }
+        },
+
+        getEditors : function(arg,req,res){
+        var u=req.user;
+        if(u){
+            var p = dbPromise();
+            db.collection('users').find({editor:true}).limit(10, p.set);
+            return p.get()
+        }
+    },
 
 		getFeed : function (arg, req, res) {
 			var p = dbPromise()

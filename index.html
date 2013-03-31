@@ -275,9 +275,34 @@ function drawGrabbaleReviewTask(task) {
     return div
 }
 
+function showAdmins(a){
+    console.log(a);
+    g_output.append($('<div id="admins" style="font-weight:bold;margin-bottom:10px;border: solid #000000 1px;"/>').text(''))
+    var div = $('div#admins');
+    div.append('<h1>Admins</h1><p></p>');
+    var admins=[];
+    _.each(a,function(admin){
+        admins.push(admin.name);
+    })
+    $('div#admins p').append(admins.join(', '));
+}
+
+function showEditors(e){
+    console.log(e);
+//    g_output.empty();
+    g_output.append($('<div id="editors" style="font-weight:bold;margin-bottom:10px;border: solid #000000 1px;"/>').text(''));
+    var div=$('div#editors');
+    div.append('<h1>Editors</h1><p></p>');
+    var editors=[];
+    _.each(e,function(editor){
+        editors.push(editor.name);
+    })
+    $('div#editors p').append(editors.join(', '));
+    //g_output.append(div);
+}
+
 function goGetAvailableTasks() {
     function helper(tasks, reviewTasks) {
-        g_output.empty()
         g_output.append($('<div style="font-weight:bold;margin-bottom:10px"/>').text('answer writing tasks, $0.28 each'))
         var div = $('<div/>')
         _.each(tasks, function (task) {
@@ -300,8 +325,15 @@ function goGetAvailableTasks() {
             goGetAvailableTasks()
         }))
     }
-    if (g_user.editor)
-        rpc('getAvailableTasks', null, 'getAvailableReviewTasks', null, helper)
+    if (g_user.editor){
+        rpc('getAvailableTasks', null, 'getAvailableReviewTasks', null, helper);
+        rpc('getAdmins',null,function(admins){
+            showAdmins(admins);
+        });
+        rpc('getEditors',null,function(editors){
+            showEditors(editors);
+        });
+    }
     else
         rpc('getAvailableTasks', null, helper)
 }
